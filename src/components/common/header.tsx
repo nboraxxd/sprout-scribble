@@ -24,7 +24,7 @@ export default async function Header() {
             <UserButton user={session.user} expires={session.expires} />
           ) : (
             <Button className="w-10 gap-1.5 max-md:p-0 md:w-auto" asChild>
-              <Link href="/api/auth/signin">
+              <Link href="/auth/login">
                 <CircleUserRoundIcon className="size-5 md:hidden" />
                 <LogInIcon className="hidden size-5 md:block" />
                 <span className="hidden md:inline">Log In</span>
