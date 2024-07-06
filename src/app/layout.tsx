@@ -11,11 +11,11 @@ const fontSans = FontSans({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Sprout&Scribble',
-    default: 'Sprout&Scribble - Mua sắm trực tuyến dễ dàng hơn',
+    template: '%s | Sprout & Scribble - Easy Online Shopping',
+    default: 'Sprout & Scribble - Easy Online Shopping',
   },
   description:
-    'Tiện lợi mua sắm hàng triệu mặt hàng, dịch vụ. Vô vàn ưu đãi freeship, mã giảm giá. Hoàn tiền 111% nếu giả. Đổi trả miễn phí trong 30 ngày. Đặt mua ngay!',
+    'Conveniently shop millions of products and services. Countless benefits including free shipping, discount codes. 111% money back guarantee. Free returns within 30 days. Order now!',
 }
 
 export default function RootLayout({

@@ -8,7 +8,7 @@ const config = {
   theme: {
     container: {
       center: true,
-      padding: '2rem',
+      padding: '1rem',
       screens: {
         '2xl': '1400px',
       },
@@ -16,6 +16,9 @@ const config = {
     extend: {
       fontFamily: {
         sans: ['var(--font-sans)', ...fontFamily.sans],
+      },
+      spacing: {
+        'header-height': 'var(--header-height)',
       },
       colors: {
         border: 'hsl(var(--border))',
