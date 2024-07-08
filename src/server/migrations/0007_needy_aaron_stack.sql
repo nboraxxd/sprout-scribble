@@ -1,0 +1,2 @@
+ALTER TABLE "emailVerificationToken" DROP CONSTRAINT "emailVerificationToken_email_token_pk";--> statement-breakpoint
+ALTER TABLE "emailVerificationToken" ADD CONSTRAINT "emailVerificationToken_email_token_id_pk" PRIMARY KEY("email","token","id");

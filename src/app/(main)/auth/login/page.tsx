@@ -1,10 +1,16 @@
 import Link from 'next/link'
+import { Metadata } from 'next'
 
 import { cn } from '@/utils'
 import { LoginForm } from '@/components/form'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { SocialGroup } from '../_components'
+
+export const metadata: Metadata = {
+  title: 'Login',
+  description: "Welcome back! Login to your account to shop to your heart's content!",
+}
 
 export default function LoginPage() {
   return (

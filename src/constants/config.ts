@@ -12,6 +12,9 @@ const configSchema = z.object({
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
   AUTH_SECRET: z.string(),
+  MAILGUN_API_KEY: z.string(),
+  NEXT_PUBLIC_URL: z.string(),
+  NEXT_PUBLIC_DOMAIN: z.string(),
 })
 
 const configProject = configSchema.safeParse({
@@ -21,6 +24,9 @@ const configProject = configSchema.safeParse({
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   AUTH_SECRET: process.env.AUTH_SECRET,
+  MAILGUN_API_KEY: process.env.MAILGUN_API_KEY,
+  NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL,
+  NEXT_PUBLIC_DOMAIN: process.env.NEXT_PUBLIC_DOMAIN,
 })
 
 if (!configProject.success) {
