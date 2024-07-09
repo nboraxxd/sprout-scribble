@@ -7,64 +7,46 @@ import bcrypt from 'bcrypt'
 
 import { users } from '@/server/schema'
 import { loginSchema, registerSchema } from '@/lib/schema-validations/auth.schema'
-import { generateVerificationToken, sendVerificationEmail } from '@/server/actions/token.action'
+import { makeEmailToken, sendEmailToken } from '@/server/actions/token.action'
 
 export const emailRegister = actionClient
   .schema(registerSchema)
   .action(async ({ parsedInput: { name, email, password } }) => {
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    const existingUser = await db.query.users.findFirst({
-      where: eq(users.email, email),
-    })
+    const existingUser = await db.query.users.findFirst({ where: eq(users.email, email) })
 
-    if (existingUser) {
-      if (existingUser.emailVerified) {
-        return {
-          success: false,
-          message: 'User already exists',
-        }
-      } else {
-        const verificationToken = await generateVerificationToken(email)
-
-        if (!verificationToken.success) {
-          return {
-            success: false,
-            message: verificationToken.message,
-          }
-        }
-
-        await sendVerificationEmail({
-          email: verificationToken.data!.email,
-          token: verificationToken.data!.token,
-        })
-
-        return {
-          success: true,
-          message: 'Email verification token resent',
-        }
+    if (existingUser && existingUser.emailVerified) {
+      return {
+        success: false,
+        message: 'User already exists',
       }
     }
 
-    await db.insert(users).values({
+    const emailTokenResponse = await makeEmailToken(email)
+    if (!emailTokenResponse.success) return emailTokenResponse
+
+    const sendEmailResponse = await sendEmailToken({
       name,
       email,
-      password: hashedPassword,
+      token: emailTokenResponse.data.token,
     })
+    if (!sendEmailResponse.success) return sendEmailResponse
 
-    const verificationToken = await generateVerificationToken(email)
-
-    await sendVerificationEmail({
-      email: verificationToken.data!.email,
-      token: verificationToken.data!.token,
-    })
+    if (!existingUser) {
+      await db.insert(users).values({
+        name,
+        email,
+        password: hashedPassword,
+      })
+    }
 
     return {
       success: true,
-      message: 'Email verification token resent',
+      message: existingUser?.emailVerified ? 'Email verification token resent' : sendEmailResponse.message,
     }
   })
 
 export const emailLogin = actionClient.schema(loginSchema).action(async ({ parsedInput: { email, password } }) => {
-  return { email }
+  return { email, password }
 })

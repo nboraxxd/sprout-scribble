@@ -3,80 +3,98 @@
 import ms from 'ms'
 import { db } from '@/server'
 import { eq } from 'drizzle-orm'
+import formData from 'form-data'
 import { randomUUID } from 'crypto'
 import Mailgun, { MailgunMessageData } from 'mailgun.js'
-import formData from 'form-data'
 
 import envConfig from '@/constants/config'
 import { emailVerificationTokens } from '@/server/schema'
 import { EmailVerificationToken, SendVerificationEmailParams } from '@/types/token.type'
 import { Response } from '@/types'
 
-export async function getVerificationTokenByEmail(email: string): Promise<Response<EmailVerificationToken | null>> {
-  try {
-    const verificationToken = await db.query.emailVerificationTokens.findFirst({
-      where: eq(emailVerificationTokens.email, email),
-    })
+export async function getEmailTokenByEmail(email: string): Promise<Response<EmailVerificationToken | null>> {
+  const verificationToken = await db.query.emailVerificationTokens.findFirst({
+    where: eq(emailVerificationTokens.email, email),
+  })
 
-    return {
-      success: true,
-      message: 'Get verification token successfully',
-      data: verificationToken ?? null,
-    }
-  } catch (error) {
-    return {
-      success: false,
-      message: 'Error getting verification token',
-    }
+  return {
+    success: true,
+    message: 'Get verification token successfully',
+    data: verificationToken ?? null,
   }
 }
 
-export async function generateVerificationToken(email: string) {
+export async function makeEmailToken(email: string): Promise<Response<EmailVerificationToken>> {
+  const now = new Date()
+  const oneMinuteInMs = ms('1m')
+
   const token = `${randomUUID()}${randomUUID()}`.replace(/-/g, '')
   const expires = new Date(Date.now() + ms('1h'))
 
   try {
-    // Check if there is an existing verification token
-    const response = await getVerificationTokenByEmail(email)
-    if (response.success && response.data) {
-      await db.update(emailVerificationTokens).set({ token, expires }).where(eq(emailVerificationTokens.email, email))
+    const emailTokenResponse = await getEmailTokenByEmail(email)
+
+    if (
+      emailTokenResponse.success &&
+      emailTokenResponse.data &&
+      now.getTime() - new Date(emailTokenResponse.data.updatedAt).getTime() < oneMinuteInMs
+    ) {
+      const remainingTimeInMs = oneMinuteInMs - (now.getTime() - new Date(emailTokenResponse.data.updatedAt).getTime())
+      const remainingTimeInSec = Math.ceil(remainingTimeInMs / 1000)
+
+      return {
+        success: false,
+        message: `Please try again in ${remainingTimeInSec} seconds`,
+      }
     }
 
-    const [verificationToken] = await db
-      .insert(emailVerificationTokens)
-      .values({
-        email,
-        token,
-        expires,
-      })
-      .returning()
+    const [verificationToken] =
+      emailTokenResponse.success && emailTokenResponse.data
+        ? await db
+            .update(emailVerificationTokens)
+            .set({ token, expires })
+            .where(eq(emailVerificationTokens.email, email))
+            .returning()
+        : await db.insert(emailVerificationTokens).values({ email, token, expires }).returning()
 
     return {
       success: true,
-      message: 'Generate verification token successfully',
+      message: 'Make email token successfully',
       data: verificationToken,
     }
-  } catch (error) {
+  } catch (error: any) {
     return {
       success: false,
-      message: 'Error generating verification token',
+      message: (error.message || error.toString()) as string,
     }
   }
 }
 
-export async function sendVerificationEmail({ email, token }: SendVerificationEmailParams) {
-  const mailgun = new Mailgun(formData)
-  const client = mailgun.client({ username: 'api', key: envConfig.MAILGUN_API_KEY })
+export async function sendEmailToken({ name, email, token }: SendVerificationEmailParams) {
+  try {
+    const mailgun = new Mailgun(formData)
+    const client = mailgun.client({ username: 'api', key: envConfig.MAILGUN_API_KEY })
 
-  const data: MailgunMessageData = {
-    from: `Sprout & Scribble <no-reply@${envConfig.NEXT_PUBLIC_DOMAIN}>`,
-    to: email,
-    subject: 'Hello',
-    template: 'sprout&scribble',
-    'h:X-Mailgun-Variables': JSON.stringify({
-      verification_link: `${envConfig.NEXT_PUBLIC_URL}/verify-email?token=${token}`,
-    }),
+    const data: MailgunMessageData = {
+      from: `Sprout & Scribble <no-reply@${envConfig.NEXT_PUBLIC_DOMAIN}>`,
+      to: `${name} <${email}>`,
+      subject: 'Verify your email - Sprout & Scribble',
+      template: 'email_verification',
+      'h:X-Mailgun-Variables': JSON.stringify({
+        verification_link: `${envConfig.NEXT_PUBLIC_URL}/auth/verify-email?token=${token}`,
+      }),
+    }
+
+    await client.messages.create(envConfig.NEXT_PUBLIC_DOMAIN, data)
+
+    return {
+      success: true,
+      message: 'Email sent successfully',
+    }
+  } catch (error: any) {
+    return {
+      success: false,
+      message: (error.message || error.toString()) as string,
+    }
   }
-
-  await client.messages.create(envConfig.NEXT_PUBLIC_DOMAIN, data)
 }

@@ -1,6 +1,8 @@
 'use client'
 
+import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
+import { LoaderCircleIcon } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { zodResolver } from '@hookform/resolvers/zod'
 
@@ -9,11 +11,9 @@ import { RegisterSchemaType, registerSchema } from '@/lib/schema-validations/aut
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { LoaderCircleIcon } from 'lucide-react'
 
 export default function RegisterForm() {
   const { status, executeAsync } = useAction(emailRegister)
-  console.log('🔥 ~ RegisterForm ~ status:', status)
 
   const form = useForm<RegisterSchemaType>({
     resolver: zodResolver(registerSchema),
@@ -27,9 +27,14 @@ export default function RegisterForm() {
   async function onSubmit(values: RegisterSchemaType) {
     try {
       const response = await executeAsync(values)
-      console.log('🔥 ~ onSubmit ~ response:', response)
-    } catch (error) {
-      console.error('🔥 ~ RegisterForm ~ error:', error)
+
+      if (response?.data?.success) {
+        toast.success(response.data.message)
+      } else {
+        toast.error(response?.data?.message ?? 'An error occurred')
+      }
+    } catch (error: any) {
+      toast.error(error.message || error.toString())
     }
   }
 
