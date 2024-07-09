@@ -54,21 +54,30 @@ export const emailRegister = actionClient
     }
   })
 
-export const emailLogin = actionClient.schema(loginSchema).action(async ({ parsedInput: { email, password } }) => {
-  return { email, password }
+export const loginByEmail = actionClient.schema(loginSchema).action(async ({ parsedInput: { email, password } }) => {
+  try {
+    await signIn('login-by-email', {
+      email,
+      password,
+      redirectTo: '/',
+    })
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return {
+        success: false,
+        message: error.message,
+      }
+    }
+    throw error
+  }
 })
 
-export async function loginByEmailToken(token: string) {
+export async function loginByToken(token: string) {
   try {
-    await signIn('credentials', {
+    await signIn('login-by-token', {
       token,
       redirectTo: '/',
     })
-
-    return {
-      success: true,
-      message: 'Email verified successfully',
-    }
   } catch (error) {
     if (error instanceof AuthError) {
       return {

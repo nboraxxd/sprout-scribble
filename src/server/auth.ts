@@ -1,18 +1,23 @@
+import bcrypt from 'bcrypt'
 import { eq } from 'drizzle-orm'
 import NextAuth, { AuthError } from 'next-auth'
 import Google from 'next-auth/providers/google'
 import Github from 'next-auth/providers/github'
-import Credentials from 'next-auth/providers/credentials'
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
+import Credentials from 'next-auth/providers/credentials'
 
 import { db } from '@/server'
 import envConfig from '@/constants/config'
 import { emailVerificationTokens, users } from '@/server/schema'
 import { getEmailTokenByToken } from '@/server/actions/token.action'
-import { loginByTokenSchema } from '@/lib/schema-validations/auth.schema'
+import { loginByTokenSchema, loginSchema } from '@/lib/schema-validations/auth.schema'
 
 class LoginByCodeError extends AuthError {
-  message = 'Authentication failed'
+  message = 'Token expired or account not found.'
+}
+
+class LoginByEmailError extends AuthError {
+  message = 'Invalid email or password.'
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -31,6 +36,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
+      id: 'login-by-token',
       credentials: {
         token: {},
       },
@@ -43,7 +49,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           const isExpired = new Date(emailTokenResponse.data.expires) < new Date()
 
-          if (isExpired) throw new LoginByCodeError('Email token expired')
+          if (isExpired) throw new LoginByCodeError()
 
           const existingUser = await db.query.users.findFirst({ where: eq(users.email, emailTokenResponse.data.email) })
 
@@ -61,6 +67,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           ])
 
           return userResponse
+        }
+
+        return null
+      },
+    }),
+    Credentials({
+      id: 'login-by-email',
+      credentials: {
+        email: {},
+        password: {},
+      },
+      authorize: async (credentials) => {
+        const loginByEmailFields = loginSchema.safeParse(credentials)
+
+        if (loginByEmailFields.success) {
+          const { email, password } = loginByEmailFields.data
+
+          const user = await db.query.users.findFirst({
+            where: eq(users.email, email),
+          })
+
+          if (!user || !user.password) throw new LoginByEmailError()
+
+          const isValid = await bcrypt.compare(password, user.password)
+
+          if (!isValid) throw new LoginByEmailError()
+
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            emailVerified: user.emailVerified,
+            role: user.role,
+          }
         }
 
         return null

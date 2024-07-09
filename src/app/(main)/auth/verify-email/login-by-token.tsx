@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-import { loginByEmailToken } from '@/server/actions/user.action'
+import { loginByToken } from '@/server/actions/user.action'
 
 export default function LoginByToken() {
   const loginByEmailRef = useRef<unknown>(null)
@@ -19,12 +19,12 @@ export default function LoginByToken() {
 
     if (!loginByEmailRef.current) {
       ;(async () => {
-        loginByEmailRef.current = loginByEmailToken
+        loginByEmailRef.current = loginByToken
 
         try {
-          const response = await loginByEmailToken(token)
+          const response = await loginByToken(token)
 
-          if (!response.success) {
+          if (response?.success === false) {
             toast.error(response.message)
           }
 
@@ -33,9 +33,6 @@ export default function LoginByToken() {
           }, 1000)
         } catch (error: any) {
           toast.error(error.message)
-        } finally {
-          router.replace('/')
-          router.refresh()
         }
       })()
     }

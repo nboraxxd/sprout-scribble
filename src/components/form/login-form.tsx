@@ -1,19 +1,23 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { LoaderCircleIcon } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { zodResolver } from '@hookform/resolvers/zod'
 
+import { loginByEmail } from '@/server/actions/user.action'
 import { LoginSchemaType, loginSchema } from '@/lib/schema-validations/auth.schema'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { emailLogin } from '@/server/actions/user.action'
+import FormMessages from '@/components/form/form-messages'
 
 export default function LoginForm() {
-  const { status, executeAsync } = useAction(emailLogin)
+  const [errorMessage, setErrorMessage] = useState('')
+
+  const { status, executeAsync } = useAction(loginByEmail)
 
   const form = useForm<LoginSchemaType>({
     resolver: zodResolver(loginSchema),
@@ -25,9 +29,13 @@ export default function LoginForm() {
 
   async function onSubmit(values: LoginSchemaType) {
     try {
-      await executeAsync(values)
-    } catch (error) {
-      console.error('🔥 ~ LoginForm ~ error:', error)
+      const response = await executeAsync(values)
+
+      if (response?.data?.success === false) {
+        setErrorMessage(response.data.message)
+      }
+    } catch (error: any) {
+      setErrorMessage(error.message)
     }
   }
 
@@ -65,6 +73,7 @@ export default function LoginForm() {
             </FormItem>
           )}
         />
+        <FormMessages errorMessage={errorMessage} />
         <Button type="submit" className="w-full gap-1.5">
           {status === 'executing' ? <LoaderCircleIcon className="size-4 animate-spin" /> : null}
           Log in
