@@ -1,6 +1,7 @@
 'use client'
 
 import { toast } from 'sonner'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { LoaderCircleIcon } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
@@ -11,8 +12,12 @@ import { RegisterSchemaType, registerSchema } from '@/lib/schema-validations/aut
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import FormMessages from '@/components/form/form-messages'
 
 export default function RegisterForm() {
+  const [errorMessage, seterrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+
   const { status, executeAsync } = useAction(emailRegister)
 
   const form = useForm<RegisterSchemaType>({
@@ -28,11 +33,8 @@ export default function RegisterForm() {
     try {
       const response = await executeAsync(values)
 
-      if (response?.data?.success) {
-        toast.success(response.data.message)
-      } else {
-        toast.error(response?.data?.message ?? 'An error occurred')
-      }
+      response?.data?.success && setSuccessMessage(response.data.message)
+      response?.data?.success === false && seterrorMessage(response.data.message)
     } catch (error: any) {
       toast.error(error.message || error.toString())
     }
@@ -80,6 +82,7 @@ export default function RegisterForm() {
             </FormItem>
           )}
         />
+        <FormMessages errorMessage={errorMessage} successMessage={successMessage} />
         <Button type="submit" className="w-full gap-1.5" disabled={status === 'executing'}>
           {status === 'executing' ? <LoaderCircleIcon className="size-4 animate-spin" /> : null}
           Register
