@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import FormMessages from '@/components/form/form-messages'
 
 export default function RegisterForm() {
-  const [errorMessage, seterrorMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
 
   const { status, executeAsync } = useAction(emailRegister)
@@ -33,8 +33,13 @@ export default function RegisterForm() {
     try {
       const response = await executeAsync(values)
 
-      response?.data?.success && setSuccessMessage(response.data.message)
-      response?.data?.success === false && seterrorMessage(response.data.message)
+      if (response?.data?.success) {
+        setErrorMessage('')
+        setSuccessMessage(response.data.message)
+      } else if (response?.data?.success === false) {
+        setSuccessMessage('')
+        setErrorMessage(response.data.message)
+      }
     } catch (error: any) {
       toast.error(error.message || error.toString())
     }

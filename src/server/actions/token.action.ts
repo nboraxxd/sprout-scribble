@@ -7,20 +7,46 @@ import formData from 'form-data'
 import { randomUUID } from 'crypto'
 import Mailgun, { MailgunMessageData } from 'mailgun.js'
 
+import { Response } from '@/types'
 import envConfig from '@/constants/config'
 import { emailVerificationTokens } from '@/server/schema'
 import { EmailVerificationToken, SendVerificationEmailParams } from '@/types/token.type'
-import { Response } from '@/types'
 
-export async function getEmailTokenByEmail(email: string): Promise<Response<EmailVerificationToken | null>> {
+export async function getEmailTokenByEmail(email: string): Promise<Response<EmailVerificationToken>> {
   const verificationToken = await db.query.emailVerificationTokens.findFirst({
     where: eq(emailVerificationTokens.email, email),
   })
 
+  if (!verificationToken) {
+    return {
+      success: false,
+      message: 'Email token not found',
+    }
+  }
+
   return {
     success: true,
-    message: 'Get verification token successfully',
-    data: verificationToken ?? null,
+    message: 'Get email token successfully',
+    data: verificationToken,
+  }
+}
+
+export async function getEmailTokenByToken(token: string): Promise<Response<EmailVerificationToken>> {
+  const verificationToken = await db.query.emailVerificationTokens.findFirst({
+    where: eq(emailVerificationTokens.token, token),
+  })
+
+  if (!verificationToken) {
+    return {
+      success: false,
+      message: 'Invalid email token',
+    }
+  }
+
+  return {
+    success: true,
+    message: 'Get email token successfully',
+    data: verificationToken,
   }
 }
 
@@ -36,7 +62,6 @@ export async function makeEmailToken(email: string): Promise<Response<EmailVerif
 
     if (
       emailTokenResponse.success &&
-      emailTokenResponse.data &&
       now.getTime() - new Date(emailTokenResponse.data.updatedAt).getTime() < oneMinuteInMs
     ) {
       const remainingTimeInMs = oneMinuteInMs - (now.getTime() - new Date(emailTokenResponse.data.updatedAt).getTime())
@@ -48,14 +73,13 @@ export async function makeEmailToken(email: string): Promise<Response<EmailVerif
       }
     }
 
-    const [verificationToken] =
-      emailTokenResponse.success && emailTokenResponse.data
-        ? await db
-            .update(emailVerificationTokens)
-            .set({ token, expires })
-            .where(eq(emailVerificationTokens.email, email))
-            .returning()
-        : await db.insert(emailVerificationTokens).values({ email, token, expires }).returning()
+    const [verificationToken] = emailTokenResponse.success
+      ? await db
+          .update(emailVerificationTokens)
+          .set({ token, expires })
+          .where(eq(emailVerificationTokens.email, email))
+          .returning()
+      : await db.insert(emailVerificationTokens).values({ email, token, expires }).returning()
 
     return {
       success: true,

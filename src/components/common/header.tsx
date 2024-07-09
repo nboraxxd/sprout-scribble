@@ -11,7 +11,9 @@ export default async function Header() {
 
   return (
     <header className="flex h-header-height items-center gap-4">
-      <LogoTextIcon />
+      <Link href="/">
+        <LogoTextIcon />
+      </Link>
 
       <ul className="ml-auto flex items-center gap-4">
         <li>

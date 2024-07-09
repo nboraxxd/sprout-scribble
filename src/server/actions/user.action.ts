@@ -1,13 +1,15 @@
 'use server'
 
+import bcrypt from 'bcrypt'
 import { db } from '@/server'
 import { eq } from 'drizzle-orm'
+import { AuthError } from 'next-auth'
 import { actionClient } from '@/lib/safe-action'
-import bcrypt from 'bcrypt'
 
+import { signIn } from '@/server/auth'
 import { users } from '@/server/schema'
-import { loginSchema, registerSchema } from '@/lib/schema-validations/auth.schema'
 import { makeEmailToken, sendEmailToken } from '@/server/actions/token.action'
+import { loginSchema, registerSchema } from '@/lib/schema-validations/auth.schema'
 
 export const emailRegister = actionClient
   .schema(registerSchema)
@@ -19,7 +21,7 @@ export const emailRegister = actionClient
     if (existingUser && existingUser.emailVerified) {
       return {
         success: false,
-        message: 'User already exists',
+        message: 'Email already registered',
       }
     }
 
@@ -39,14 +41,41 @@ export const emailRegister = actionClient
         email,
         password: hashedPassword,
       })
+    } else {
+      await db.update(users).set({
+        name,
+        password: hashedPassword,
+      })
     }
 
     return {
       success: true,
-      message: existingUser?.emailVerified ? 'Email verification token resent' : sendEmailResponse.message,
+      message: sendEmailResponse.message,
     }
   })
 
 export const emailLogin = actionClient.schema(loginSchema).action(async ({ parsedInput: { email, password } }) => {
   return { email, password }
 })
+
+export async function loginByEmailToken(token: string) {
+  try {
+    await signIn('credentials', {
+      token,
+      redirectTo: '/',
+    })
+
+    return {
+      success: true,
+      message: 'Email verified successfully',
+    }
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return {
+        success: false,
+        message: error.message,
+      }
+    }
+    throw error
+  }
+}
