@@ -10,9 +10,9 @@ import Mailgun, { MailgunMessageData } from 'mailgun.js'
 import { Response } from '@/types'
 import envConfig from '@/constants/config'
 import { emailVerificationTokens } from '@/server/schema'
-import { EmailVerificationToken, SendVerificationEmailParams } from '@/types/token.type'
+import { TokenInfo, SendVerificationEmailParams } from '@/types/token.type'
 
-export async function getEmailTokenByEmail(email: string): Promise<Response<EmailVerificationToken>> {
+export async function getEmailTokenByEmail(email: string): Promise<Response<TokenInfo>> {
   const verificationToken = await db.query.emailVerificationTokens.findFirst({
     where: eq(emailVerificationTokens.email, email),
   })
@@ -31,7 +31,7 @@ export async function getEmailTokenByEmail(email: string): Promise<Response<Emai
   }
 }
 
-export async function getEmailTokenByToken(token: string): Promise<Response<EmailVerificationToken>> {
+export async function getEmailTokenByToken(token: string): Promise<Response<TokenInfo>> {
   const verificationToken = await db.query.emailVerificationTokens.findFirst({
     where: eq(emailVerificationTokens.token, token),
   })
@@ -50,7 +50,7 @@ export async function getEmailTokenByToken(token: string): Promise<Response<Emai
   }
 }
 
-export async function makeEmailToken(email: string): Promise<Response<EmailVerificationToken>> {
+export async function makeEmailToken(email: string): Promise<Response<TokenInfo>> {
   const now = new Date()
   const oneMinuteInMs = ms('1m')
 
@@ -58,13 +58,14 @@ export async function makeEmailToken(email: string): Promise<Response<EmailVerif
   const expires = new Date(Date.now() + ms('1h'))
 
   try {
-    const emailTokenResponse = await getEmailTokenByEmail(email)
+    const findExistingEmailToken = await getEmailTokenByEmail(email)
 
     if (
-      emailTokenResponse.success &&
-      now.getTime() - new Date(emailTokenResponse.data.updatedAt).getTime() < oneMinuteInMs
+      findExistingEmailToken.success &&
+      now.getTime() - new Date(findExistingEmailToken.data.updatedAt).getTime() < oneMinuteInMs
     ) {
-      const remainingTimeInMs = oneMinuteInMs - (now.getTime() - new Date(emailTokenResponse.data.updatedAt).getTime())
+      const remainingTimeInMs =
+        oneMinuteInMs - (now.getTime() - new Date(findExistingEmailToken.data.updatedAt).getTime())
       const remainingTimeInSec = Math.ceil(remainingTimeInMs / 1000)
 
       return {
@@ -73,7 +74,7 @@ export async function makeEmailToken(email: string): Promise<Response<EmailVerif
       }
     }
 
-    const [verificationToken] = emailTokenResponse.success
+    const [verificationToken] = findExistingEmailToken.success
       ? await db
           .update(emailVerificationTokens)
           .set({ token, expires })

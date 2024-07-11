@@ -9,15 +9,15 @@ import Credentials from 'next-auth/providers/credentials'
 import { db } from '@/server'
 import envConfig from '@/constants/config'
 import { emailVerificationTokens, users } from '@/server/schema'
-import { getEmailTokenByToken } from '@/server/actions/token.action'
+import { getEmailTokenByToken } from '@/server/actions/email-token.action'
 import { loginByTokenSchema, loginSchema } from '@/lib/schema-validations/auth.schema'
 
 class LoginByCodeError extends AuthError {
-  message = 'Token expired or account not found.'
+  message = 'Token expired or invalid'
 }
 
 class LoginByEmailError extends AuthError {
-  message = 'Invalid email or password.'
+  message = 'Invalid email or password'
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({

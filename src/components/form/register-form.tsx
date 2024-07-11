@@ -30,6 +30,8 @@ export default function RegisterForm() {
   })
 
   async function onSubmit(values: RegisterSchemaType) {
+    if (emailRegisterStatus === 'executing' || loginByEmailStatus === 'executing') return
+
     try {
       const response = await emailRegisterExecuteAsync(values)
 
@@ -68,7 +70,7 @@ export default function RegisterForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="bruchwayne@wayne-ent.com" type="email" autoComplete="email" />
+                <Input {...field} placeholder="bruchwayne@dc.com" type="email" autoComplete="email" />
               </FormControl>
               <FormMessage />
             </FormItem>

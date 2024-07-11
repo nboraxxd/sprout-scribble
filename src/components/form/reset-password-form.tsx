@@ -1,39 +1,46 @@
 'use client'
 
-import Link from 'next/link'
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useRouter } from 'next/navigation'
 import { LoaderCircleIcon } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import { loginByEmail } from '@/server/actions/user.action'
-import { LoginSchemaType, loginSchema } from '@/lib/schema-validations/auth.schema'
+import { resetPassword } from '@/server/actions/user.action'
+import { ResetPasswordSchemaType, resetPasswordSchema } from '@/lib/schema-validations/auth.schema'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import FormMessages from '@/components/form/form-messages'
 
-export default function LoginForm() {
+export default function ForgotPasswordForm({ token }: { token: string }) {
   const [errorMessage, setErrorMessage] = useState('')
 
-  const { status, executeAsync } = useAction(loginByEmail)
+  const router = useRouter()
+  const { status, executeAsync } = useAction(resetPassword)
 
-  const form = useForm<LoginSchemaType>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<ResetPasswordSchemaType>({
+    resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      email: '',
       password: '',
+      confirmPassword: '',
     },
   })
 
-  async function onSubmit(values: LoginSchemaType) {
+  async function onSubmit(values: ResetPasswordSchemaType) {
     if (status === 'executing') return
 
     try {
-      const response = await executeAsync(values)
+      const response = await executeAsync({ ...values, token })
 
-      if (response?.data?.success === false) {
+      if (response?.data?.success === true) {
+        setErrorMessage('')
+        toast.success(response.data.message)
+        router.push('/auth/login')
+        router.refresh()
+      } else if (response?.data?.success === false) {
         setErrorMessage(response.data.message)
       }
     } catch (error: any) {
@@ -44,14 +51,20 @@ export default function LoginForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6" noValidate>
+        <div className="hidden">
+          <FormLabel>Email</FormLabel>
+          <FormControl>
+            <Input type="email" autoComplete="email" disabled readOnly />
+          </FormControl>
+        </div>
         <FormField
           control={form.control}
-          name="email"
+          name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="bruchwayne@dc.com" type="email" autoComplete="email" />
+                <Input {...field} placeholder="*********" type="password" autoComplete="new-password" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -59,17 +72,12 @@ export default function LoginForm() {
         />
         <FormField
           control={form.control}
-          name="password"
+          name="confirmPassword"
           render={({ field }) => (
             <FormItem>
-              <div className="flex justify-between">
-                <FormLabel>Password</FormLabel>
-                <Button variant="link" size="sm" className="h-auto p-0" asChild>
-                  <Link href="/auth/forgot-password">Forgot password?</Link>
-                </Button>
-              </div>
+              <FormLabel>Confirm Password</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="*********" type="password" autoComplete="current-password" />
+                <Input {...field} placeholder="*********" type="password" autoComplete="new-password" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -78,7 +86,7 @@ export default function LoginForm() {
         <FormMessages errorMessage={errorMessage} />
         <Button type="submit" className="w-full gap-1.5" disabled={status === 'executing'}>
           {status === 'executing' ? <LoaderCircleIcon className="size-4 animate-spin" /> : null}
-          Log in
+          Reset Password
         </Button>
       </form>
     </Form>

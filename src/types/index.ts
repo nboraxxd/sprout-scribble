@@ -1,3 +1,6 @@
+import * as schema from '@/server/schema'
+import { NeonHttpDatabase } from 'drizzle-orm/neon-http'
+
 type SuccessResponse<Data> = {
   success: true
   message: string
@@ -10,3 +13,5 @@ type ErrorResponse = {
 }
 
 export type Response<Data> = SuccessResponse<Data> | ErrorResponse
+
+export type Tables = NeonHttpDatabase<typeof schema>['query']

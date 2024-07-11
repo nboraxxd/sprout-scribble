@@ -15,5 +15,28 @@ export const registerSchema = z.object({
   password: z.string().min(6).max(100),
 })
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+})
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().optional(),
+    password: z.string().min(6).max(100),
+    confirmPassword: z.string().min(6).max(100),
+  })
+  .strict()
+  .superRefine(({ password, confirmPassword }, ctx) => {
+    if (password !== confirmPassword) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Passwords do not match',
+        path: ['confirmPassword'],
+      })
+    }
+  })
+
 export type LoginSchemaType = z.infer<typeof loginSchema>
 export type RegisterSchemaType = z.infer<typeof registerSchema>
+export type ForgotPasswordSchemaType = z.infer<typeof forgotPasswordSchema>
+export type ResetPasswordSchemaType = z.infer<typeof resetPasswordSchema>

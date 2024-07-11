@@ -4,7 +4,7 @@ export type SendVerificationEmailParams = {
   token: string
 }
 
-export type EmailVerificationToken = {
+export type TokenInfo = {
   id: string
   email: string
   token: string
@@ -12,3 +12,5 @@ export type EmailVerificationToken = {
   createdAt: Date
   updatedAt: Date
 }
+
+export type SendResetPasswordEmailParams = SendVerificationEmailParams
