@@ -1,19 +1,17 @@
-import { CircleUserRoundIcon, LogInIcon, ShoppingBagIcon } from 'lucide-react'
-
-import { auth } from '@/server/auth'
-import { Button } from '@/components/ui/button'
-import { UserButton } from '@/components/common'
-import { LogoTextIcon } from '@/components/icons'
 import Link from 'next/link'
+import { ShoppingBagIcon } from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
+import { AuthButton } from '@/components/common'
+import { LogoTextIcon } from '@/components/icons'
 
 export default async function Header() {
-  const session = await auth()
-
   return (
     <header className="flex h-header-height items-center gap-4">
       <Link href="/">
         <LogoTextIcon />
       </Link>
+      <Link href="/auth/register">Products</Link>
 
       <ul className="ml-auto flex items-center gap-4">
         <li>
@@ -22,17 +20,7 @@ export default async function Header() {
           </Button>
         </li>
         <li>
-          {session ? (
-            <UserButton user={session.user} expires={session.expires} />
-          ) : (
-            <Button className="w-10 gap-1.5 max-md:p-0 md:w-auto" asChild>
-              <Link href="/auth/login">
-                <CircleUserRoundIcon className="size-5 md:hidden" />
-                <LogInIcon className="hidden size-5 md:block" />
-                <span className="hidden md:inline">Log In</span>
-              </Link>
-            </Button>
-          )}
+          <AuthButton />
         </li>
       </ul>
     </header>

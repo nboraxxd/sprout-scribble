@@ -24,6 +24,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db),
   secret: envConfig.AUTH_SECRET,
   session: { strategy: 'jwt' },
+
   providers: [
     Google({
       clientId: envConfig.GOOGLE_CLIENT_ID,

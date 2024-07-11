@@ -7,7 +7,7 @@ import { LoaderCircleIcon } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import { emailRegister } from '@/server/actions/user.action'
+import { emailRegister, loginByEmail } from '@/server/actions/user.action'
 import { RegisterSchemaType, registerSchema } from '@/lib/schema-validations/auth.schema'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -16,9 +16,9 @@ import FormMessages from '@/components/form/form-messages'
 
 export default function RegisterForm() {
   const [errorMessage, setErrorMessage] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
 
-  const { status, executeAsync } = useAction(emailRegister)
+  const { status: emailRegisterStatus, executeAsync: emailRegisterExecuteAsync } = useAction(emailRegister)
+  const { status: loginByEmailStatus, executeAsync: loginByEmailExecuteAsync } = useAction(loginByEmail)
 
   const form = useForm<RegisterSchemaType>({
     resolver: zodResolver(registerSchema),
@@ -31,13 +31,13 @@ export default function RegisterForm() {
 
   async function onSubmit(values: RegisterSchemaType) {
     try {
-      const response = await executeAsync(values)
+      const response = await emailRegisterExecuteAsync(values)
 
-      if (response?.data?.success) {
-        setErrorMessage('')
-        setSuccessMessage(response.data.message)
+      if (response?.data?.success === true) {
+        await loginByEmailExecuteAsync({ email: values.email, password: values.password })
+
+        toast.success(response.data.message)
       } else if (response?.data?.success === false) {
-        setSuccessMessage('')
         setErrorMessage(response.data.message)
       }
     } catch (error: any) {
@@ -87,9 +87,15 @@ export default function RegisterForm() {
             </FormItem>
           )}
         />
-        <FormMessages errorMessage={errorMessage} successMessage={successMessage} />
-        <Button type="submit" className="w-full gap-1.5" disabled={status === 'executing'}>
-          {status === 'executing' ? <LoaderCircleIcon className="size-4 animate-spin" /> : null}
+        <FormMessages errorMessage={errorMessage} />
+        <Button
+          type="submit"
+          className="w-full gap-1.5"
+          disabled={emailRegisterStatus === 'executing' || loginByEmailStatus === 'executing'}
+        >
+          {emailRegisterStatus === 'executing' || loginByEmailStatus === 'executing' ? (
+            <LoaderCircleIcon className="size-4 animate-spin" />
+          ) : null}
           Register
         </Button>
       </form>

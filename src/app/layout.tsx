@@ -3,7 +3,6 @@ import { Inter as FontSans } from 'next/font/google'
 
 import { cn } from '@/utils'
 import { Toaster } from '@/components/ui/sonner'
-import { ReactQueryProvider } from '@/components/provider'
 import './globals.css'
 
 const fontSans = FontSans({
@@ -28,10 +27,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
-        <ReactQueryProvider>
-          {children}
-          <Toaster />
-        </ReactQueryProvider>
+        {children}
+        <Toaster />
       </body>
     </html>
   )

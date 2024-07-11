@@ -26,6 +26,7 @@ export default function LoginByToken() {
 
           if (response?.success === false) {
             toast.error(response.message)
+            router.replace('/')
           }
 
           timeout = setTimeout(() => {
@@ -33,6 +34,7 @@ export default function LoginByToken() {
           }, 1000)
         } catch (error: any) {
           toast.error(error.message)
+          router.replace('/')
         }
       })()
     }

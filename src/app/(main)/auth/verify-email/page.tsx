@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { LoaderCircleIcon } from 'lucide-react'
 import LoginByToken from './login-by-token'
+import { Suspense } from 'react'
 
 export const metadata: Metadata = {
   title: 'Verify Email',
@@ -14,7 +15,9 @@ export default function VerifyEmailPage() {
         <LoaderCircleIcon className="size-8 animate-spin" />
         <span className="font-medium text-foreground">Verifying email...</span>
       </p>
-      <LoginByToken />
+      <Suspense fallback={null}>
+        <LoginByToken />
+      </Suspense>
     </div>
   )
 }
