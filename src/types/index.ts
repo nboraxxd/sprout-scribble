@@ -12,6 +12,11 @@ type ErrorResponse = {
   message: string
 }
 
+export type MessageResponse = {
+  success: boolean
+  message: string
+}
+
 export type Response<Data> = SuccessResponse<Data> | ErrorResponse
 
 export type Tables = NeonHttpDatabase<typeof schema>['query']
