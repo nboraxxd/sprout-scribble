@@ -106,7 +106,7 @@ export async function sendEmailToken({ name, email, token }: SendVerificationEma
       subject: 'Verify your email - Sprout & Scribble',
       template: 'email_verification',
       'h:X-Mailgun-Variables': JSON.stringify({
-        verification_link: `${envConfig.NEXT_PUBLIC_URL}/auth/verify-email?token=${token}`,
+        verification_link: `${envConfig.NEXT_PUBLIC_URL}/verify-email?token=${token}`,
       }),
     }
 

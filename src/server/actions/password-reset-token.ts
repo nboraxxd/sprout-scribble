@@ -88,7 +88,7 @@ export async function sendPasswordResetToken({ name, email, token }: SendResetPa
       template: 'password_reset',
       'h:X-Mailgun-Variables': JSON.stringify({
         name,
-        reset_password_link: `${envConfig.NEXT_PUBLIC_URL}/auth/reset-password?token=${token}`,
+        reset_password_link: `${envConfig.NEXT_PUBLIC_URL}/reset-password?token=${token}`,
       }),
     }
 

@@ -11,7 +11,7 @@ export default async function Header() {
       <Link href="/">
         <LogoTextIcon />
       </Link>
-      <Link href="/auth/register">Products</Link>
+      <Link href="/register">Register</Link>
 
       <ul className="ml-auto flex items-center gap-4">
         <li>

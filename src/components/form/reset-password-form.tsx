@@ -38,7 +38,7 @@ export default function ForgotPasswordForm({ token }: { token: string }) {
       if (response?.data?.success === true) {
         setErrorMessage('')
         toast.success(response.data.message)
-        router.push('/auth/login')
+        router.push('/login')
         router.refresh()
       } else if (response?.data?.success === false) {
         setErrorMessage(response.data.message)

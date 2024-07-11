@@ -26,7 +26,7 @@ export default function LoginPage() {
       </CardFooter>
       <CardFooter className="flex items-center justify-center gap-1.5">
         <span>Don&apos;t have an account?</span>
-        <Link href="/auth/register" className={cn(buttonVariants({ variant: 'link', size: 'none' }))}>
+        <Link href="/register" className={cn(buttonVariants({ variant: 'link', size: 'none' }))}>
           Register here
         </Link>
       </CardFooter>

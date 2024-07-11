@@ -65,7 +65,7 @@ export default function LoginForm() {
               <div className="flex justify-between">
                 <FormLabel>Password</FormLabel>
                 <Button variant="link" size="sm" className="h-auto p-0" asChild>
-                  <Link href="/auth/forgot-password">Forgot password?</Link>
+                  <Link href="/forgot-password">Forgot password?</Link>
                 </Button>
               </div>
               <FormControl>
