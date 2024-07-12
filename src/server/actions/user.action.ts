@@ -7,8 +7,9 @@ import { AuthError } from 'next-auth'
 import { db, dbPool } from '@/server'
 import { signIn } from '@/server/auth'
 import { passwordResetTokens, users } from '@/server/schema'
-import { makeEmailToken, sendEmailToken } from '@/server/actions/email-token.action'
-import { makePasswordResetToken, sendPasswordResetToken } from '@/server/actions/password-reset-token'
+import { makeEmailToken } from '@/server/actions/email-token.action'
+import { makePasswordResetToken } from '@/server/actions/password-reset-token'
+import { sendEmailToken, sendPasswordResetToken } from '@/utils/mailgun'
 import { actionClient } from '@/lib/safe-action'
 import {
   forgotPasswordSchema,
