@@ -1,11 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { User } from 'next-auth'
+import { useTheme } from 'next-themes'
 import { signOut } from 'next-auth/react'
 import { cva } from 'class-variance-authority'
 import { CircleUserRoundIcon, LogInIcon, LogOutIcon, MoonIcon, SettingsIcon, SunIcon, TruckIcon } from 'lucide-react'
 
+import { capitalizeFirstLetter, cn } from '@/utils'
 import useCurrentSession from '@/hooks/use-current-session'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -16,16 +19,9 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import Image from 'next/image'
-import { cn } from '@/utils'
 
 export default function AuthButton() {
   const { session, status } = useCurrentSession()
@@ -46,6 +42,8 @@ export default function AuthButton() {
 }
 
 function UserButton({ user }: { user?: User }) {
+  const { theme, setTheme } = useTheme()
+
   return user ? (
     <DropdownMenu>
       <DropdownMenuTrigger className="cursor-pointer" asChild>
@@ -74,10 +72,13 @@ function UserButton({ user }: { user?: User }) {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <button className="group w-full cursor-pointer gap-2 transition-colors focus:text-primary">
+            <button
+              className="group w-full cursor-pointer gap-2 transition-colors focus:text-primary"
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            >
               <SunIcon className="size-3.5 rotate-0 scale-100 transition-transform group-hover:rotate-180 dark:-rotate-90 dark:scale-0" />
-              <MoonIcon className="absolute size-3.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              Light mode
+              <MoonIcon className="absolute size-3.5 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
+              {theme ? `${capitalizeFirstLetter(theme)} mode` : 'Light/Dark'}
             </button>
           </DropdownMenuItem>
         </DropdownMenuGroup>

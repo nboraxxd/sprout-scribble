@@ -6,6 +6,7 @@ export default function LogoTextIcon(props: React.ComponentProps<'svg'>) {
       viewBox="0 0 189 10"
       className="cursor-pointer fill-secondary-foreground transition-all duration-500 ease-in-out hover:fill-secondary-foreground/75"
       xmlns="http://www.w3.org/2000/svg"
+      fill="currentColor"
       {...props}
     >
       <g>
