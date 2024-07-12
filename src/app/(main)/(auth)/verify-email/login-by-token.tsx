@@ -4,31 +4,42 @@ import { toast } from 'sonner'
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { MessageResponse } from '@/types'
+import { loginByToken } from '@/server/actions/user.action'
 
-export default function LoginByToken({ response }: { response: MessageResponse | undefined }) {
-  const messageRef = useRef<string | null>(null)
+export default function LoginByToken({ token }: { token: string }) {
+  const loginByEmailRef = useRef<unknown>(null)
+
   const router = useRouter()
 
   useEffect(() => {
     let timeout: NodeJS.Timeout | null = null
 
-    if (!messageRef.current && response && response.success === false) {
-      messageRef.current = response.message
+    if (!loginByEmailRef.current) {
+      ;(async () => {
+        loginByEmailRef.current = loginByToken
 
-      toast.error(response.message)
-      router.push('/')
-      router.refresh()
+        try {
+          const response = await loginByToken(token)
 
-      timeout = setTimeout(() => {
-        messageRef.current = null
-      }, 1000)
+          if (response?.success === false) {
+            toast.error(response.message)
+            router.replace('/')
+          }
+
+          timeout = setTimeout(() => {
+            loginByEmailRef.current = null
+          }, 1000)
+        } catch (error: any) {
+          toast.error(error.message)
+          router.replace('/')
+        }
+      })()
     }
 
     return () => {
       if (timeout) clearTimeout(timeout)
     }
-  }, [response, router])
+  }, [router, token])
 
   return null
 }
