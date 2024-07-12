@@ -8,7 +8,6 @@ import { randomUUID } from 'crypto'
 import Mailgun, { MailgunMessageData } from 'mailgun.js'
 
 import { Response } from '@/types'
-import envConfig from '@/constants/config'
 import { emailVerificationTokens } from '@/server/schema'
 import { TokenInfo, SendVerificationEmailParams } from '@/types/token.type'
 
@@ -98,19 +97,19 @@ export async function makeEmailToken(email: string): Promise<Response<TokenInfo>
 export async function sendEmailToken({ name, email, token }: SendVerificationEmailParams) {
   try {
     const mailgun = new Mailgun(formData)
-    const client = mailgun.client({ username: 'api', key: envConfig.MAILGUN_API_KEY })
+    const client = mailgun.client({ username: 'api', key: process.env.MAILGUN_API_KEY! })
 
     const data: MailgunMessageData = {
-      from: `Sprout & Scribble <no-reply@${envConfig.NEXT_PUBLIC_DOMAIN}>`,
+      from: `Sprout & Scribble <no-reply@${process.env.NEXT_PUBLIC_DOMAIN}>`,
       to: `${name} <${email}>`,
       subject: 'Verify your email - Sprout & Scribble',
       template: 'email_verification',
       'h:X-Mailgun-Variables': JSON.stringify({
-        verification_link: `${envConfig.NEXT_PUBLIC_URL}/verify-email?token=${token}`,
+        verification_link: `${process.env.NEXT_PUBLIC_URL}/verify-email?token=${token}`,
       }),
     }
 
-    await client.messages.create(envConfig.NEXT_PUBLIC_DOMAIN, data)
+    await client.messages.create(process.env.NEXT_PUBLIC_DOMAIN, data)
 
     return {
       success: true,

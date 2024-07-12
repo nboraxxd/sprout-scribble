@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import NextAuth, { AuthError } from 'next-auth'
 import Google from 'next-auth/providers/google'
@@ -7,7 +7,6 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import Credentials from 'next-auth/providers/credentials'
 
 import { db } from '@/server'
-import envConfig from '@/constants/config'
 import { emailVerificationTokens, users } from '@/server/schema'
 import { getEmailTokenByToken } from '@/server/actions/email-token.action'
 import { loginByTokenSchema, loginSchema } from '@/lib/schema-validations/auth.schema'
@@ -22,18 +21,18 @@ class LoginByEmailError extends AuthError {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db),
-  secret: envConfig.AUTH_SECRET,
+  secret: process.env.AUTH_SECRET,
   session: { strategy: 'jwt' },
 
   providers: [
     Google({
-      clientId: envConfig.GOOGLE_CLIENT_ID,
-      clientSecret: envConfig.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       allowDangerousEmailAccountLinking: true,
     }),
     Github({
-      clientId: envConfig.GITHUB_CLIENT_ID,
-      clientSecret: envConfig.GITHUB_CLIENT_SECRET,
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
       allowDangerousEmailAccountLinking: true,
     }),
     Credentials({

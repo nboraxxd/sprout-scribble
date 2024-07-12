@@ -8,7 +8,6 @@ import { randomUUID } from 'crypto'
 import Mailgun, { MailgunMessageData } from 'mailgun.js'
 
 import { Response } from '@/types'
-import envConfig from '@/constants/config'
 import { passwordResetTokens } from '@/server/schema'
 import { TokenInfo, SendResetPasswordEmailParams } from '@/types/token.type'
 
@@ -79,20 +78,20 @@ export async function makePasswordResetToken(email: string): Promise<Response<To
 export async function sendPasswordResetToken({ name, email, token }: SendResetPasswordEmailParams) {
   try {
     const mailgun = new Mailgun(formData)
-    const client = mailgun.client({ username: 'api', key: envConfig.MAILGUN_API_KEY })
+    const client = mailgun.client({ username: 'api', key: process.env.MAILGUN_API_KEY! })
 
     const data: MailgunMessageData = {
-      from: `Sprout & Scribble <no-reply@${envConfig.NEXT_PUBLIC_DOMAIN}>`,
+      from: `Sprout & Scribble <no-reply@${process.env.NEXT_PUBLIC_DOMAIN}>`,
       to: `${name} <${email}>`,
       subject: 'Reset your password - Sprout & Scribble',
       template: 'password_reset',
       'h:X-Mailgun-Variables': JSON.stringify({
         name,
-        reset_password_link: `${envConfig.NEXT_PUBLIC_URL}/reset-password?token=${token}`,
+        reset_password_link: `${process.env.NEXT_PUBLIC_URL}/reset-password?token=${token}`,
       }),
     }
 
-    await client.messages.create(envConfig.NEXT_PUBLIC_DOMAIN, data)
+    await client.messages.create(process.env.NEXT_PUBLIC_DOMAIN, data)
 
     return {
       success: true,

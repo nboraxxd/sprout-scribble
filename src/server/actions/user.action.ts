@@ -1,6 +1,6 @@
 'use server'
 
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { eq } from 'drizzle-orm'
 import { AuthError } from 'next-auth'
 

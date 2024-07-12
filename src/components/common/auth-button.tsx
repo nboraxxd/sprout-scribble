@@ -60,18 +60,18 @@ function UserButton({ user }: { user?: User }) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/profile" className="group cursor-pointer gap-2 transition-colors focus:text-primary">
+            <Link href="/dashboard/orders" className="group cursor-pointer gap-2 transition-colors focus:text-primary">
               <TruckIcon className="size-3.5 transition-transform group-hover:translate-x-1" />
               My orders
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/profile" className="group cursor-pointer gap-2 transition-colors focus:text-primary">
+            <Link href="/dashboard/profile" className="group cursor-pointer gap-2 transition-colors focus:text-primary">
               <SettingsIcon className="size-3.5 transition-transform group-hover:rotate-180" />
-              Settings
+              Profile
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild onSelect={(ev) => ev.preventDefault()}>
             <button
               className="group w-full cursor-pointer gap-2 transition-colors focus:text-primary"
               onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
@@ -118,7 +118,7 @@ function UserAvatar({ user, variant }: { user: User; variant?: 'square' }) {
           priority
         />
       ) : (
-        <AvatarFallback className={cn(variantOptions({ variant }), 'rounded-md text-lg font-semibold')}>
+        <AvatarFallback className={cn(variantOptions({ variant }), 'text-lg font-semibold')}>
           {user.name ? user.name.charAt(0).toLocaleUpperCase() : user.email?.charAt(0).toLocaleUpperCase()}
         </AvatarFallback>
       )}
