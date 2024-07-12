@@ -1,27 +1,28 @@
-import { auth } from '@/server/auth'
+import { NextRequest, NextResponse } from 'next/server'
 
 const protectedPaths = ['/dashboard']
 const authPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email']
 
-export default auth((req) => {
-  const { nextUrl } = req
-  const isAuthenticated = !!req.auth
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
 
-  if (!isAuthenticated && protectedPaths.some((path) => nextUrl.pathname.startsWith(path))) {
-    const url = new URL('/login', nextUrl)
-    url.searchParams.set('next', nextUrl.pathname)
+  const sessionToken = request.cookies.get('authjs.session-token')?.value
 
-    return Response.redirect(new URL(url))
+  if (!sessionToken && protectedPaths.some((path) => pathname.startsWith(path))) {
+    const url = new URL('/login', request.url)
+    url.searchParams.set('next', pathname)
+
+    return NextResponse.redirect(url)
   }
 
-  if (isAuthenticated && authPaths.some((path) => nextUrl.pathname.startsWith(path))) {
-    return Response.redirect(new URL('/', nextUrl))
+  if (sessionToken && authPaths.some((path) => pathname.startsWith(path))) {
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
-  if (isAuthenticated && nextUrl.pathname === '/dashboard') {
-    return Response.redirect(new URL('/dashboard/orders', nextUrl))
+  if (pathname === '/dashboard') {
+    return NextResponse.redirect(new URL('/dashboard/orders', request.url))
   }
-})
+}
 
 export const config = {
   matcher: ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/dashboard/:path*'],
