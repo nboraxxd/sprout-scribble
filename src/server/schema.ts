@@ -13,8 +13,13 @@ export const users = pgTable('user', {
   emailVerified: timestamp('emailVerified', { mode: 'date' }),
   image: text('image'),
   password: text('password'),
-  twoFactorEnabled: boolean('twoFactorEnabled').default(false),
-  role: RoleEnum('roles').default('user'),
+  isTwoFactorEnabled: boolean('isTwoFactorEnabled').notNull().default(false),
+  role: RoleEnum('roles').notNull().default('user'),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 })
 
 export const accounts = pgTable(
@@ -33,6 +38,11 @@ export const accounts = pgTable(
     scope: text('scope'),
     id_token: text('id_token'),
     session_state: text('session_state'),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (account) => ({
     compoundKey: primaryKey({

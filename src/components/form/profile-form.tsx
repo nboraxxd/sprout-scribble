@@ -186,7 +186,7 @@ export default function ProfileForm({ user }: { user: User }) {
           name="newPassword"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>New Password</FormLabel>
+              <FormLabel>New password</FormLabel>
               <FormControl>
                 <Input {...field} placeholder="*********" type="password" autoComplete="new-password" />
               </FormControl>
@@ -202,12 +202,13 @@ export default function ProfileForm({ user }: { user: User }) {
           name="isTwoFactorEnabled"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Two Factor Authentication</FormLabel>
+              <div className="flex items-center gap-3">
+                <FormLabel>Two factor authentication</FormLabel>
+                <FormControl>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </FormControl>
+              </div>
               <FormDescription>Enable two factor authentication for your account</FormDescription>
-              <FormControl>
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
-              </FormControl>
-
               <FormMessage />
             </FormItem>
           )}

@@ -7,7 +7,7 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import Credentials from 'next-auth/providers/credentials'
 
 import { db } from '@/server'
-import { emailVerificationTokens, users } from '@/server/schema'
+import { accounts, emailVerificationTokens, users } from '@/server/schema'
 import { getEmailTokenByToken } from '@/server/actions/email-token.action'
 import { loginByTokenSchema, loginSchema } from '@/lib/schema-validations/auth.schema'
 
@@ -23,6 +23,50 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db),
   secret: process.env.AUTH_SECRET,
   session: { strategy: 'jwt' },
+  callbacks: {
+    async session({ session, token }) {
+      if (session && token.sub) {
+        session.user.id = token.sub
+      }
+
+      if (session.user) {
+        session.user.name = token.name as string | null
+        session.user.email = token.email as string
+        session.user.image = token.image as string | null
+        session.user.emailVerified = token.emailVerified as Date | null
+        session.user.role = token.role as 'user' | 'admin'
+        session.user.isTwoFactorEnabled = token.isTwoFactorEnabled as boolean
+        session.user.isOAuth = token.isOAuth as boolean
+      }
+
+      return session
+    },
+
+    async jwt({ token }) {
+      if (!token.sub) return token
+
+      const existingUser = await db.query.users.findFirst({ where: eq(users.id, token.sub) })
+      if (!existingUser) return token
+
+      const existingAccount = await db.query.accounts.findFirst({ where: eq(accounts.userId, token.sub) })
+
+      token.name = existingUser.name
+      token.email = existingUser.email
+      token.image = existingUser.image
+      token.emailVerified = existingUser.emailVerified
+      token.role = existingUser.role
+      token.isTwoFactorEnabled = existingUser.isTwoFactorEnabled
+      token.isOAuth = !!existingAccount
+
+      return token
+    },
+  },
+  events: {
+    linkAccount: async ({ user }) => {
+      if (!user.id) return
+      await db.update(users).set({ emailVerified: new Date() }).where(eq(users.id, user.id))
+    },
+  },
 
   providers: [
     Google({

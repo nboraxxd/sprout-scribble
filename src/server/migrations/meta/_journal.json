@@ -141,6 +141,27 @@
       "when": 1720659124866,
       "tag": "0019_same_slayback",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1720842408813,
+      "tag": "0020_silly_madame_web",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1720845166261,
+      "tag": "0021_opposite_nomad",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1720845234801,
+      "tag": "0022_curved_sabra",
+      "breakpoints": true
     }
   ]
 }
