@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { LoaderCircleIcon } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'
@@ -26,6 +26,13 @@ export default function ForgotPasswordForm() {
     },
   })
 
+  useEffect(() => {
+    if (status === 'executing') {
+      setErrorMessage('')
+      setSuccessMessage('')
+    }
+  }, [status])
+
   async function onSubmit(values: ForgotPasswordSchemaType) {
     if (status === 'executing') return
 
@@ -33,10 +40,8 @@ export default function ForgotPasswordForm() {
       const response = await executeAsync(values)
 
       if (response?.data?.success === true) {
-        setErrorMessage('')
         setSuccessMessage(response.data.message)
       } else if (response?.data?.success === false) {
-        setSuccessMessage('')
         setErrorMessage(response.data.message)
       }
     } catch (error: any) {

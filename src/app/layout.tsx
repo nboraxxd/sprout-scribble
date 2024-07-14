@@ -4,6 +4,7 @@ import { Inter as FontSans } from 'next/font/google'
 import { cn } from '@/utils'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from '@/components/provider'
+import { Header } from '@/components/common'
 import './globals.css'
 
 const fontSans = FontSans({
@@ -29,7 +30,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
+          <div className="container sm:px-6 lg:px-8">
+            <Header />
+            {children}
+          </div>
           <Toaster />
         </ThemeProvider>
       </body>
