@@ -1,6 +1,9 @@
 'use client'
 
 import Image from 'next/image'
+import omitBy from 'lodash/omitBy'
+import isUndefined from 'lodash/isUndefined'
+import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { LoaderCircleIcon, UploadIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -8,6 +11,7 @@ import { useAction } from 'next-safe-action/hooks'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import { ExtendUser } from '@root/next-auth'
+import { useSessionData } from '@/hooks/useSessionData'
 import { updateProfile } from '@/server/actions/user.action'
 import { UpdateProfileSchemaType, updateProfileSchema } from '@/lib/schema-validations/profile.schema'
 import { Input } from '@/components/ui/input'
@@ -16,8 +20,6 @@ import { Switch } from '@/components/ui/switch'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { FormMessages } from '@/components/form'
-import { isUndefined, omitBy } from 'lodash'
-import { toast } from 'sonner'
 
 export default function UpdateProfileForm({ user }: { user: ExtendUser }) {
   const [errorMessage, setErrorMessage] = useState('')
@@ -25,6 +27,7 @@ export default function UpdateProfileForm({ user }: { user: ExtendUser }) {
   const [file, setFile] = useState<File | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
+  const { update: updateSession } = useSessionData()
   const { status, executeAsync } = useAction(updateProfile)
 
   const form = useForm<UpdateProfileSchemaType>({
@@ -56,7 +59,6 @@ export default function UpdateProfileForm({ user }: { user: ExtendUser }) {
 
   async function onSubmit(values: UpdateProfileSchemaType) {
     if (status === 'executing') return
-    console.log('🔥 ~ onSubmit ~ values:', values)
 
     const changes = omitBy(
       {
@@ -76,22 +78,26 @@ export default function UpdateProfileForm({ user }: { user: ExtendUser }) {
       return
     }
 
-    try {
-      toast.promise(executeAsync(values), {
-        loading: 'Saving changes...',
-        success: (response) => {
-          if (response?.data?.success === false) {
-            setErrorMessage(response.data.message)
-            toast.dismiss()
-          } else if (response?.data?.success === true) {
-            form.reset()
-            return response.data.message
-          }
-        },
-      })
-    } catch (error: any) {
-      setErrorMessage(error.message)
-    }
+    toast.promise(executeAsync(values), {
+      loading: 'Saving changes...',
+      success: async (response) => {
+        if (response?.data?.success === true) {
+          form.resetField('password')
+          form.resetField('newPassword')
+          form.resetField('oAuthPassword')
+
+          await updateSession()
+          return response.data.message
+        } else if (response?.data?.success === false) {
+          setErrorMessage(response.data.message)
+          toast.dismiss()
+        }
+      },
+      error: (error) => {
+        setErrorMessage(error.message)
+        return toast.dismiss()
+      },
+    })
   }
 
   return (

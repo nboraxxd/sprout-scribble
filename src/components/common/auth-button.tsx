@@ -9,7 +9,7 @@ import { CircleUserRoundIcon, LogInIcon, LogOutIcon, MoonIcon, SettingsIcon, Sun
 
 import { ExtendUser } from '@root/next-auth'
 import { capitalizeFirstLetter, cn } from '@/utils'
-import useCurrentSession from '@/hooks/use-current-session'
+import { useSessionData } from '@/hooks/useSessionData'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -24,7 +24,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export default function AuthButton() {
-  const { session, status } = useCurrentSession()
+  // const { session, status } = useCurrentSession()
+  const { data: session, status } = useSessionData()
 
   if (status === 'loading') return <Skeleton className="size-10" />
 

@@ -219,9 +219,6 @@ export const updateProfile = actionClient
       hashedPassword = await bcrypt.hash(oAuthPassword, 10)
     }
 
-    const updateValues = omitBy({ name, password: hashedPassword, image, isTwoFactorEnabled }, isUndefined)
-    console.log('🔥 ~ .action ~ updateValues:', updateValues)
-
     await db
       .update(users)
       .set(omitBy({ name, password: hashedPassword, image, isTwoFactorEnabled }, isUndefined))

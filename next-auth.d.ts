@@ -19,3 +19,8 @@ declare module 'next-auth' {
     user: ExtendUser
   }
 }
+
+// Make the getCsrfToken accessible outside of next-auth package
+declare module 'next-auth/react' {
+  function getCsrfToken(): Promise<string>
+}
