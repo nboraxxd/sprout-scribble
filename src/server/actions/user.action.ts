@@ -12,7 +12,7 @@ import { auth, signIn } from '@/server/auth'
 import { passwordResetTokens, users } from '@/server/schema'
 import { makeEmailToken } from '@/server/actions/email-token.action'
 import { makePasswordResetToken } from '@/server/actions/password-reset-token'
-import { sendEmailToken, sendPasswordResetToken } from '@/utils/mailgun'
+import { sendEmail } from '@/utils/mailgun'
 import { actionClient } from '@/lib/safe-action'
 import { updateProfileSchema } from '@/lib/schema-validations/profile.schema'
 import {
@@ -39,10 +39,14 @@ export const emailRegister = actionClient
     const emailTokenResponse = await makeEmailToken(email)
     if (!emailTokenResponse.success) return emailTokenResponse
 
-    const sendEmailResponse = await sendEmailToken({
+    const sendEmailResponse = await sendEmail({
       name,
       email,
-      token: emailTokenResponse.data.token,
+      subject: 'Verify your email - Sprout & Scribble',
+      template: 'email_verification',
+      variables: {
+        verification_link: `${process.env.NEXT_PUBLIC_URL}/verify-email?token=${emailTokenResponse.data.token}`,
+      },
     })
     if (!sendEmailResponse.success) return sendEmailResponse
 
@@ -112,10 +116,15 @@ export const forgotPassword = actionClient.schema(forgotPasswordSchema).action(a
   const passwordResetTokenResponse = await makePasswordResetToken(email)
   if (!passwordResetTokenResponse.success) return passwordResetTokenResponse
 
-  const sendPasswordResetResponse = await sendPasswordResetToken({
+  const sendPasswordResetResponse = await sendEmail({
     name: existingUser.name || 'there',
     email,
-    token: passwordResetTokenResponse.data.token,
+    subject: 'Reset your password - Sprout & Scribble',
+    template: 'password_reset',
+    variables: {
+      name: existingUser.name || 'there',
+      reset_password_link: `${process.env.NEXT_PUBLIC_URL}/reset-password?token=${passwordResetTokenResponse.data.token}`,
+    },
   })
   if (!sendPasswordResetResponse.success) return sendPasswordResetResponse
 

@@ -222,7 +222,7 @@ export default function UpdateProfileForm({ user }: { user: ExtendUser }) {
           )}
         />
 
-        {user.isPassword ? (
+        {user.hasPassword ? (
           <>
             {/* Password */}
             <FormField
@@ -278,7 +278,7 @@ export default function UpdateProfileForm({ user }: { user: ExtendUser }) {
         ) : null}
 
         {/* OAuth password */}
-        {user.isOAuth && !user.isPassword ? (
+        {user.isOAuth && !user.hasPassword ? (
           <FormField
             control={form.control}
             name="oAuthPassword"
@@ -314,14 +314,14 @@ export default function UpdateProfileForm({ user }: { user: ExtendUser }) {
                 <FormLabel>Two factor authentication</FormLabel>
                 <FormControl>
                   <Switch
-                    checked={user.isPassword ? field.value : undefined}
-                    onCheckedChange={user.isPassword ? field.onChange : undefined}
-                    disabled={!user.isPassword}
+                    checked={user.hasPassword ? field.value : undefined}
+                    onCheckedChange={user.hasPassword ? field.onChange : undefined}
+                    disabled={!user.hasPassword}
                   />
                 </FormControl>
               </div>
               <FormDescription>
-                {user.isPassword
+                {user.hasPassword
                   ? `${user.isTwoFactorEnabled ? 'Disable' : 'Enable'} two factor authentication for your account.`
                   : 'Two factor authentication is only available for accounts with password.'}
               </FormDescription>

@@ -1,9 +1,3 @@
-export type SendVerificationEmailParams = {
-  name: string
-  email: string
-  token: string
-}
-
 export type TokenInfo = {
   id: string
   email: string
@@ -13,4 +7,10 @@ export type TokenInfo = {
   updatedAt: Date
 }
 
-export type SendResetPasswordEmailParams = SendVerificationEmailParams
+export type SendEmail = {
+  name: string
+  email: string
+  subject: string
+  template: string
+  variables: Record<string, string>
+}

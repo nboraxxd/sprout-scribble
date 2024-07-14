@@ -9,7 +9,7 @@ export type ExtendUser = DefaultSession['user'] & {
   role: 'user' | 'admin'
   isTwoFactorEnabled: boolean
   isOAuth: boolean
-  isPassword: boolean
+  hasPassword: boolean
   createdAt: Date
   updatedAt: Date
 }

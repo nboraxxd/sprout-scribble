@@ -37,7 +37,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as 'user' | 'admin'
         session.user.isTwoFactorEnabled = token.isTwoFactorEnabled as boolean
         session.user.isOAuth = token.isOAuth as boolean
-        session.user.isPassword = token.isPassword as boolean
+        session.user.hasPassword = token.isPassword as boolean
         session.user.createdAt = token.createdAt as Date
         session.user.updatedAt = token.updatedAt as Date
       }
