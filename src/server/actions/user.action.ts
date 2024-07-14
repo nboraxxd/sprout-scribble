@@ -1,16 +1,20 @@
 'use server'
 
 import bcrypt from 'bcryptjs'
+import omitBy from 'lodash/omitBy'
+import isUndefined from 'lodash/isUndefined'
 import { eq } from 'drizzle-orm'
 import { AuthError } from 'next-auth'
+import { revalidatePath } from 'next/cache'
 
 import { db, dbPool } from '@/server'
-import { signIn } from '@/server/auth'
+import { auth, signIn } from '@/server/auth'
 import { passwordResetTokens, users } from '@/server/schema'
 import { makeEmailToken } from '@/server/actions/email-token.action'
 import { makePasswordResetToken } from '@/server/actions/password-reset-token'
 import { sendEmailToken, sendPasswordResetToken } from '@/utils/mailgun'
 import { actionClient } from '@/lib/safe-action'
+import { updateProfileSchema } from '@/lib/schema-validations/profile.schema'
 import {
   forgotPasswordSchema,
   loginSchema,
@@ -172,5 +176,61 @@ export const resetPassword = actionClient
     return {
       success: true,
       message: 'Password reset successfully',
+    }
+  })
+
+export const updateProfile = actionClient
+  .schema(updateProfileSchema)
+  .action(async ({ parsedInput: { name, password, newPassword, image, isTwoFactorEnabled, oAuthPassword } }) => {
+    const session = await auth()
+    if (!session) {
+      return {
+        success: false,
+        message: 'Unauthorized',
+      }
+    }
+
+    const dbUser = await db.query.users.findFirst({ where: eq(users.id, session.user.id) })
+    if (!dbUser) {
+      return {
+        success: false,
+        message: 'User not found',
+      }
+    }
+
+    if (newPassword && oAuthPassword) {
+      return {
+        success: false,
+        message: 'Cannot change password and OAuth password at the same time',
+      }
+    }
+
+    if (password && dbUser.password && !bcrypt.compareSync(password, dbUser.password)) {
+      return {
+        success: false,
+        message: 'Current password is incorrect',
+      }
+    }
+
+    let hashedPassword: string | undefined
+    if (newPassword) {
+      hashedPassword = await bcrypt.hash(newPassword, 10)
+    } else if (oAuthPassword) {
+      hashedPassword = await bcrypt.hash(oAuthPassword, 10)
+    }
+
+    const updateValues = omitBy({ name, password: hashedPassword, image, isTwoFactorEnabled }, isUndefined)
+    console.log('🔥 ~ .action ~ updateValues:', updateValues)
+
+    await db
+      .update(users)
+      .set(omitBy({ name, password: hashedPassword, image, isTwoFactorEnabled }, isUndefined))
+      .where(eq(users.id, session.user.id))
+
+    revalidatePath('/dashboard/profile')
+
+    return {
+      success: true,
+      message: 'Profile updated successfully',
     }
   })

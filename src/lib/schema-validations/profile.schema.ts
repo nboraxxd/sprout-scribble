@@ -1,12 +1,13 @@
 import { z } from 'zod'
 
-export const profileSchema = z
+export const updateProfileSchema = z
   .object({
-    name: z.string().min(1).max(100).optional(),
+    name: z.string().min(1).max(100),
     image: z.string().url().optional(),
     password: z.string().min(6).max(100).optional(),
     newPassword: z.string().min(6).max(100).optional(),
-    isTwoFactorEnabled: z.boolean().optional(),
+    isTwoFactorEnabled: z.boolean().default(false),
+    oAuthPassword: z.string().min(6).max(100).optional(),
   })
   .strict()
   .superRefine(({ password, newPassword }, ctx) => {
@@ -33,4 +34,4 @@ export const profileSchema = z
     }
   })
 
-export type ProfileSchemaType = z.infer<typeof profileSchema>
+export type UpdateProfileSchemaType = z.infer<typeof updateProfileSchema>

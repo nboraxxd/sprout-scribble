@@ -2,12 +2,12 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { User } from 'next-auth'
 import { useTheme } from 'next-themes'
 import { signOut } from 'next-auth/react'
 import { cva } from 'class-variance-authority'
 import { CircleUserRoundIcon, LogInIcon, LogOutIcon, MoonIcon, SettingsIcon, SunIcon, TruckIcon } from 'lucide-react'
 
+import { ExtendUser } from '@root/next-auth'
 import { capitalizeFirstLetter, cn } from '@/utils'
 import useCurrentSession from '@/hooks/use-current-session'
 import { Button } from '@/components/ui/button'
@@ -41,7 +41,7 @@ export default function AuthButton() {
   )
 }
 
-function UserButton({ user }: { user?: User }) {
+function UserButton({ user }: { user?: ExtendUser }) {
   const { theme, setTheme } = useTheme()
 
   return user ? (
@@ -97,7 +97,7 @@ function UserButton({ user }: { user?: User }) {
   ) : null
 }
 
-function UserAvatar({ user, variant }: { user: User; variant?: 'square' }) {
+function UserAvatar({ user, variant }: { user: ExtendUser; variant?: 'square' }) {
   const variantOptions = cva('', {
     variants: {
       variant: {

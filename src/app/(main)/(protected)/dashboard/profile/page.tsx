@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
 import { auth } from '@/server/auth'
-import { ProfileForm } from '@/components/form'
+import { UpdateProfileForm } from '@/components/form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export const metadata: Metadata = {
@@ -22,7 +22,7 @@ export default async function ProfilePage() {
         <CardDescription>Update your profile information.</CardDescription>
       </CardHeader>
       <CardContent>
-        <ProfileForm user={session.user} />
+        <UpdateProfileForm user={session.user} />
       </CardContent>
     </Card>
   )
