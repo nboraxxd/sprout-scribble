@@ -1,6 +1,7 @@
 import ms from 'ms'
 import { randomInt } from 'crypto'
 import { and, eq } from 'drizzle-orm'
+import { headers } from 'next/headers'
 
 import { Response } from '@/types'
 import { TwoFactorCode } from '@/types/token.type'
@@ -35,9 +36,8 @@ export async function getTwoFactorCodeByEmailOrIpAddress({
 }
 
 export async function makeTwoFactorCode(email: string): Promise<Response<TwoFactorCode>> {
-  const getIpAddressResponse = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/ip-address`)
-  const { privateIP }: { privateIP: string | null } = await getIpAddressResponse.json()
-  console.log('🔥 ~ makeTwoFactorCode ~ privateIP:', privateIP)
+  const headersList = headers()
+  const ipAddress = headersList.get('request-ip')
 
   const now = new Date()
   const thirtySecondsInMs = ms('30s')
@@ -47,7 +47,7 @@ export async function makeTwoFactorCode(email: string): Promise<Response<TwoFact
 
   try {
     const findExistingPasswordToken = await getTwoFactorCodeByEmailOrIpAddress({
-      ipAddress: privateIP ?? undefined,
+      ipAddress: ipAddress ?? undefined,
       email,
     })
 
@@ -65,8 +65,8 @@ export async function makeTwoFactorCode(email: string): Promise<Response<TwoFact
       }
     }
 
-    const whereClause = privateIP
-      ? and(eq(twoFactorCodes.email, email), eq(twoFactorCodes.ipAddress, privateIP))
+    const whereClause = ipAddress
+      ? and(eq(twoFactorCodes.email, email), eq(twoFactorCodes.ipAddress, ipAddress))
       : eq(twoFactorCodes.email, email)
 
     const [verificationToken] = findExistingPasswordToken.success
@@ -77,7 +77,7 @@ export async function makeTwoFactorCode(email: string): Promise<Response<TwoFact
           .returning()
       : await db
           .insert(twoFactorCodes)
-          .values({ email, code: verificationCode.toString(), expires, ipAddress: privateIP })
+          .values({ email, code: verificationCode.toString(), expires, ipAddress })
           .returning()
 
     return {
