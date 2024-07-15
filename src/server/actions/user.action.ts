@@ -4,7 +4,6 @@ import bcrypt from 'bcryptjs'
 import omitBy from 'lodash/omitBy'
 import isUndefined from 'lodash/isUndefined'
 import { eq } from 'drizzle-orm'
-import { randomInt } from 'crypto'
 import { AuthError } from 'next-auth'
 import { revalidatePath } from 'next/cache'
 
@@ -12,6 +11,7 @@ import { db, dbPool } from '@/server'
 import { auth, signIn } from '@/server/auth'
 import { passwordResetTokens, users } from '@/server/schema'
 import { makeEmailToken } from '@/server/actions/email-token.action'
+import { makeTwoFactorCode } from '@/server/actions/two-factor-code.action'
 import { makePasswordResetToken } from '@/server/actions/password-reset-token'
 import { sendEmail } from '@/utils/mailgun'
 import { actionClient } from '@/lib/safe-action'
@@ -83,7 +83,8 @@ export const loginByEmail = actionClient.schema(loginSchema).action(async ({ par
     }
 
     if (existingUser.isTwoFactorEnabled) {
-      const verificationCode = randomInt(100_000, 999_999)
+      const twoFactorCodeResponse = await makeTwoFactorCode(email)
+      if (twoFactorCodeResponse.success === false) return twoFactorCodeResponse
 
       const response = await sendEmail({
         name: existingUser.name || 'there',
@@ -92,15 +93,15 @@ export const loginByEmail = actionClient.schema(loginSchema).action(async ({ par
         template: 'two_factor',
         variables: {
           name: existingUser.name || 'there',
-          verification_code: verificationCode.toString(),
+          verification_code: twoFactorCodeResponse.data.code,
         },
       })
-
       if (!response.success) return response
 
       return {
         success: true,
         message: 'Verification code sent',
+        data: twoFactorCodeResponse.data,
       }
     } else {
       await signIn('login-by-email', {

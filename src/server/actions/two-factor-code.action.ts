@@ -1,17 +1,24 @@
+import ms from 'ms'
+import { randomInt } from 'crypto'
+import { and, eq } from 'drizzle-orm'
+import { headers } from 'next/headers'
+
 import { Response } from '@/types'
 import { TwoFactorCode } from '@/types/token.type'
 import { db } from '@/server'
-import { and } from 'drizzle-orm'
+import { twoFactorCodes } from '@/server/schema'
 
-export async function getTwoFactorCodeByEmailAndId({
+export async function getTwoFactorCodeByEmailOrIpAddress({
   email,
-  id,
+  ipAddress,
 }: {
-  id: string
+  ipAddress?: string
   email: string
 }): Promise<Response<TwoFactorCode>> {
   const twoFactorCode = await db.query.twoFactorCodes.findFirst({
-    where: (twoFactorCodes, { eq }) => and(eq(twoFactorCodes.email, email), eq(twoFactorCodes.id, id)),
+    where: ipAddress
+      ? (twoFactorCodes, { eq }) => and(eq(twoFactorCodes.email, email), eq(twoFactorCodes.ipAddress, ipAddress))
+      : (twoFactorCodes, { eq }) => eq(twoFactorCodes.email, email),
   })
 
   if (!twoFactorCode) {
@@ -28,47 +35,60 @@ export async function getTwoFactorCodeByEmailAndId({
   }
 }
 
-// export async function makeTwoFactorCode(email: string): Promise<Response<TwoFactorCode>> {
-//   const now = new Date()
-//   const oneMinuteInMs = ms('1m')
+export async function makeTwoFactorCode(email: string): Promise<Response<TwoFactorCode>> {
+  const headersList = headers()
+  const ipAddress = headersList.get('request-ip')
 
-//   const verificationCode = randomInt(100_000, 999_999)
-//   const expires = new Date(Date.now() + ms('1h'))
+  const now = new Date()
+  const thirtySecondsInMs = ms('30s')
 
-//   try {
-//     const findExistingPasswordToken = await getTwoFactorCodeByEmailAndId({ id, email })
+  const verificationCode = randomInt(100_000, 999_999)
+  const expires = new Date(Date.now() + ms('5m'))
 
-//     if (
-//       findExistingPasswordToken.success &&
-//       now.getTime() - new Date(findExistingPasswordToken.data.updatedAt).getTime() < oneMinuteInMs
-//     ) {
-//       const remainingTimeInMs =
-//         oneMinuteInMs - (now.getTime() - new Date(findExistingPasswordToken.data.updatedAt).getTime())
-//       const remainingTimeInSec = Math.ceil(remainingTimeInMs / 1000)
+  try {
+    const findExistingPasswordToken = await getTwoFactorCodeByEmailOrIpAddress({
+      ipAddress: ipAddress ?? undefined,
+      email,
+    })
 
-//       return {
-//         success: false,
-//         message: `Please try again in ${remainingTimeInSec} seconds`,
-//       }
-//     }
+    if (
+      findExistingPasswordToken.success &&
+      now.getTime() - new Date(findExistingPasswordToken.data.updatedAt).getTime() < thirtySecondsInMs
+    ) {
+      const remainingTimeInMs =
+        thirtySecondsInMs - (now.getTime() - new Date(findExistingPasswordToken.data.updatedAt).getTime())
+      const remainingTimeInSec = Math.ceil(remainingTimeInMs / 1000)
 
-//     const [verificationToken] = findExistingPasswordToken.success
-//       ? await db
-//           .update(passwordResetTokens)
-//           .set({ token, expires })
-//           .where(eq(passwordResetTokens.email, email))
-//           .returning()
-//       : await db.insert(passwordResetTokens).values({ email, token, expires }).returning()
+      return {
+        success: false,
+        message: `Please try again in ${remainingTimeInSec} seconds`,
+      }
+    }
 
-//     return {
-//       success: true,
-//       message: 'Make password reset token successfully',
-//       data: verificationToken,
-//     }
-//   } catch (error: any) {
-//     return {
-//       success: false,
-//       message: (error.message || error.toString()) as string,
-//     }
-//   }
-// }
+    const whereClause = ipAddress
+      ? and(eq(twoFactorCodes.email, email), eq(twoFactorCodes.ipAddress, ipAddress))
+      : eq(twoFactorCodes.email, email)
+
+    const [verificationToken] = findExistingPasswordToken.success
+      ? await db
+          .update(twoFactorCodes)
+          .set({ code: verificationCode.toString(), expires })
+          .where(whereClause)
+          .returning()
+      : await db
+          .insert(twoFactorCodes)
+          .values({ email, code: verificationCode.toString(), expires, ipAddress })
+          .returning()
+
+    return {
+      success: true,
+      message: 'Make password reset token successfully',
+      data: verificationToken,
+    }
+  } catch (error: any) {
+    return {
+      success: false,
+      message: (error.message || error.toString()) as string,
+    }
+  }
+}

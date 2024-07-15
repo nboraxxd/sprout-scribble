@@ -1,26 +1,12 @@
-export type TokenInfo = {
-  id: string
-  email: string
-  token: string
-  expires: Date
-  createdAt: Date
-  updatedAt: Date
-}
+import { emailVerificationTokens, twoFactorCodes } from '@/server/schema'
 
-export type SendEmail = {
+export type TokenInfo = typeof emailVerificationTokens.$inferSelect
+export type TwoFactorCode = typeof twoFactorCodes.$inferSelect
+
+export type SendEmailParams = {
   name: string
   email: string
   subject: string
   template: string
   variables: Record<string, string>
-}
-
-export type TwoFactorCode = {
-  id: string
-  email: string
-  code: string
-  expires: Date
-  userId: string
-  createdAt: Date
-  updatedAt: Date
 }

@@ -104,9 +104,7 @@ export const twoFactorCodes = pgTable(
     code: text('code').notNull(),
     expires: timestamp('expires', { mode: 'date' }).notNull(),
     email: text('email').notNull(),
-    userId: text('userId')
-      .references(() => users.id, { onDelete: 'cascade' })
-      .notNull(),
+    ipAddress: text('ipAddress'),
     createdAt: timestamp('createdAt').notNull().defaultNow(),
     updatedAt: timestamp('updatedAt')
       .notNull()

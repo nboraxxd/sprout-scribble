@@ -1,9 +1,9 @@
 import formData from 'form-data'
 import Mailgun, { MailgunMessageData } from 'mailgun.js'
 
-import { SendEmail } from '@/types/token.type'
+import { SendEmailParams } from '@/types/token.type'
 
-export async function sendEmail({ name, email, subject, template, variables }: SendEmail) {
+export async function sendEmail({ name, email, subject, template, variables }: SendEmailParams) {
   try {
     const mailgun = new Mailgun(formData)
     const client = mailgun.client({ username: 'api', key: process.env.MAILGUN_API_KEY! })
