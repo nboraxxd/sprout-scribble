@@ -2,7 +2,7 @@ import { auth } from '@/server/auth'
 import { NextResponse } from 'next/server'
 
 const protectedPaths = ['/dashboard']
-const authPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email']
+const authPaths = ['/login', '/register', '/forgot-password', '/reset-password']
 
 export default auth((req) => {
   const { nextUrl } = req
@@ -35,5 +35,5 @@ export default auth((req) => {
 })
 
 export const config = {
-  matcher: ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/dashboard/:path*'],
+  matcher: ['/login', '/register', '/forgot-password', '/reset-password', '/dashboard/:path*'],
 }

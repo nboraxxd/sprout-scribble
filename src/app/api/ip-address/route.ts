@@ -1,22 +1,8 @@
-import os from 'os'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET() {
-  const interfaces = os.networkInterfaces()
-
-  let privateIP = 'Not Found'
-
-  for (const name of Object.keys(interfaces)) {
-    const ifaceArray = interfaces[name]
-    if (ifaceArray) {
-      for (const iface of ifaceArray) {
-        if (iface.family === 'IPv4' && !iface.internal) {
-          privateIP = iface.address
-          break
-        }
-      }
-    }
-  }
+export async function GET(req: NextRequest) {
+  const privateIP = (req.headers.get('x-forwarded-for') ?? '127.0.0.1').split(',')[0]
   console.log('🔥 ~ GET ~ privateIP:', privateIP)
 
-  return Response.json({ privateIP })
+  return NextResponse.json({ privateIP })
 }
