@@ -162,6 +162,20 @@
       "when": 1720845234801,
       "tag": "0022_curved_sabra",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1721005554633,
+      "tag": "0023_gigantic_bucky",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1721007266644,
+      "tag": "0024_motionless_trish_tilby",
+      "breakpoints": true
     }
   ]
 }

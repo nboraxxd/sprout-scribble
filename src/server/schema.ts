@@ -94,3 +94,28 @@ export const passwordResetTokens = pgTable(
     }),
   })
 )
+
+export const twoFactorCodes = pgTable(
+  'twoFactorCode',
+  {
+    id: text('id')
+      .notNull()
+      .$defaultFn(() => createId()),
+    code: text('code').notNull(),
+    expires: timestamp('expires', { mode: 'date' }).notNull(),
+    email: text('email').notNull(),
+    userId: text('userId')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (vt) => ({
+    compoundKey: primaryKey({
+      columns: [vt.id, vt.code, vt.email],
+    }),
+  })
+)

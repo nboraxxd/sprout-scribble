@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import omitBy from 'lodash/omitBy'
 import isUndefined from 'lodash/isUndefined'
 import { eq } from 'drizzle-orm'
+import { randomInt } from 'crypto'
 import { AuthError } from 'next-auth'
 import { revalidatePath } from 'next/cache'
 
@@ -71,11 +72,43 @@ export const emailRegister = actionClient
 
 export const loginByEmail = actionClient.schema(loginSchema).action(async ({ parsedInput: { email, password } }) => {
   try {
-    await signIn('login-by-email', {
-      email,
-      password,
-      redirectTo: '/',
-    })
+    const existingUser = await db.query.users.findFirst({ where: eq(users.email, email) })
+    if (!existingUser || !existingUser.password) {
+      throw new AuthError('Invalid email or password')
+    }
+
+    const isValid = await bcrypt.compare(password, existingUser.password)
+    if (!isValid) {
+      throw new AuthError('Invalid email or password')
+    }
+
+    if (existingUser.isTwoFactorEnabled) {
+      const verificationCode = randomInt(100_000, 999_999)
+
+      const response = await sendEmail({
+        name: existingUser.name || 'there',
+        email,
+        subject: 'Login verification code - Sprout & Scribble',
+        template: 'two_factor',
+        variables: {
+          name: existingUser.name || 'there',
+          verification_code: verificationCode.toString(),
+        },
+      })
+
+      if (!response.success) return response
+
+      return {
+        success: true,
+        message: 'Verification code sent',
+      }
+    } else {
+      await signIn('login-by-email', {
+        email,
+        password,
+        redirectTo: '/',
+      })
+    }
   } catch (error) {
     if (error instanceof AuthError) {
       return {

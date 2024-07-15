@@ -6,6 +6,7 @@ import { LoginForm } from '@/components/form'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { SocialGroup } from '../_components'
+import { headers } from 'next/headers'
 
 export const metadata: Metadata = {
   title: 'Login',
@@ -13,6 +14,10 @@ export const metadata: Metadata = {
 }
 
 export default function LoginPage() {
+  const headersList = headers()
+  const ip = headersList.get('request-ip')
+  console.log('🔥 ~ LoginPage ~ ip:', ip)
+
   return (
     <Card className="max-w-md grow">
       <CardHeader>

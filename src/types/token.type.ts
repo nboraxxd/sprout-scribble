@@ -14,3 +14,13 @@ export type SendEmail = {
   template: string
   variables: Record<string, string>
 }
+
+export type TwoFactorCode = {
+  id: string
+  email: string
+  code: string
+  expires: Date
+  userId: string
+  createdAt: Date
+  updatedAt: Date
+}

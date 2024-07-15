@@ -1,0 +1,1 @@
+ALTER TABLE "twoFactorCode" ALTER COLUMN "userId" SET NOT NULL;
