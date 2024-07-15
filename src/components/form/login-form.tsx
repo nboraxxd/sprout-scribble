@@ -42,7 +42,6 @@ export default function LoginForm() {
       const response = await executeAsync(values)
 
       if (response?.data?.success === true) {
-        console.log('🔥 ~ onSubmit ~ response:', response)
         setSuccessMessage(response.data.message)
       } else if (response?.data?.success === false) {
         setErrorMessage(response.data.message)

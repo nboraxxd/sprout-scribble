@@ -96,7 +96,11 @@ export const loginByEmail = actionClient.schema(loginSchema).action(async ({ par
           verification_code: twoFactorCodeResponse.data.code,
         },
       })
-      if (!response.success) return response
+      if (response.success === false)
+        return {
+          success: false,
+          message: response.message,
+        }
 
       return {
         success: true,
