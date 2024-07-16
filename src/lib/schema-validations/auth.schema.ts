@@ -4,9 +4,16 @@ export const loginByTokenSchema = z.object({
   token: z.string().min(1),
 })
 
+export const loginByCodeSchema = z.object({
+  id: z.string().min(1),
+  email: z.string().email(),
+  code: z.string().min(6).max(6),
+})
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6).max(100),
+  code: z.string().min(6).max(6).optional(),
 })
 
 export const registerSchema = z.object({

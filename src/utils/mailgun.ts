@@ -3,7 +3,7 @@ import Mailgun, { MailgunMessageData } from 'mailgun.js'
 
 import { SendEmailParams } from '@/types/token.type'
 
-export async function sendEmail({ name, email, subject, template, variables }: SendEmailParams) {
+export async function sendEmail({ name, email, subject, html }: SendEmailParams) {
   try {
     const mailgun = new Mailgun(formData)
     const client = mailgun.client({ username: 'api', key: process.env.MAILGUN_API_KEY! })
@@ -12,8 +12,7 @@ export async function sendEmail({ name, email, subject, template, variables }: S
       from: `Sprout & Scribble <no-reply@${process.env.NEXT_PUBLIC_DOMAIN}>`,
       to: `${name} <${email}>`,
       subject,
-      template,
-      'h:X-Mailgun-Variables': JSON.stringify(variables),
+      html,
     }
 
     await client.messages.create(process.env.NEXT_PUBLIC_DOMAIN, data)

@@ -1,3 +1,5 @@
+'use server'
+
 import ms from 'ms'
 import { randomInt } from 'crypto'
 import { and, eq } from 'drizzle-orm'
@@ -5,8 +7,12 @@ import { headers } from 'next/headers'
 
 import { Response } from '@/types'
 import { TwoFactorCode } from '@/types/token.type'
+import { sendEmail } from '@/utils/mailgun'
+import { EMAIL_TEMPLATES } from '@/constants/email-templates'
 import { db } from '@/server'
 import { twoFactorCodes } from '@/server/schema'
+import { actionClient } from '@/lib/safe-action'
+import { twoFactorCodeSchema } from '@/lib/schema-validations/common.schema'
 
 export async function getTwoFactorCodeByEmailOrIpAddress({
   email,
@@ -92,3 +98,37 @@ export async function makeTwoFactorCode(email: string): Promise<Response<TwoFact
     }
   }
 }
+
+export async function makeAndSendTwoFactorCode({ email, name }: { email: string; name?: string }) {
+  const twoFactorCodeResponse = await makeTwoFactorCode(email)
+  if (twoFactorCodeResponse.success === false) return twoFactorCodeResponse
+
+  const response = await sendEmail({
+    name: name || 'there',
+    email,
+    subject: 'Login verification code - Sprout & Scribble',
+    html: EMAIL_TEMPLATES.TWO_FACTOR({ code: twoFactorCodeResponse.data.code, name: name || 'there' }),
+  })
+  if (response.success === false) {
+    return {
+      success: false,
+      message: response.message,
+    }
+  }
+
+  return {
+    success: true,
+    message: 'Verification code sent',
+    data: {
+      id: twoFactorCodeResponse.data.id,
+      email: twoFactorCodeResponse.data.email,
+      name,
+    },
+  }
+}
+
+export const resendTwoFactorCode = actionClient
+  .schema(twoFactorCodeSchema)
+  .action(async ({ parsedInput: { email, name } }) => {
+    return makeAndSendTwoFactorCode({ email, name })
+  })

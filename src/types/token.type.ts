@@ -7,6 +7,5 @@ export type SendEmailParams = {
   name: string
   email: string
   subject: string
-  template: string
-  variables: Record<string, string>
+  html: string
 }

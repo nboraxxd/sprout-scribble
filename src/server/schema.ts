@@ -1,26 +1,32 @@
 import { createId } from '@paralleldrive/cuid2'
 import type { AdapterAccountType } from 'next-auth/adapters'
-import { timestamp, pgTable, text, primaryKey, integer, boolean, pgEnum } from 'drizzle-orm/pg-core'
+import { timestamp, pgTable, text, primaryKey, integer, boolean, pgEnum, uniqueIndex } from 'drizzle-orm/pg-core'
 
 export const RoleEnum = pgEnum('RoleEnum', ['user', 'admin'])
 
-export const users = pgTable('user', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => createId()),
-  name: text('name'),
-  email: text('email').notNull(),
-  emailVerified: timestamp('emailVerified', { mode: 'date' }),
-  image: text('image'),
-  password: text('password'),
-  isTwoFactorEnabled: boolean('isTwoFactorEnabled').notNull().default(false),
-  role: RoleEnum('roles').notNull().default('user'),
-  createdAt: timestamp('createdAt').notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt')
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-})
+export const users = pgTable(
+  'user',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    name: text('name'),
+    email: text('email').notNull().unique(),
+    emailVerified: timestamp('emailVerified', { mode: 'date' }),
+    image: text('image'),
+    password: text('password'),
+    isTwoFactorEnabled: boolean('isTwoFactorEnabled').notNull().default(false),
+    role: RoleEnum('roles').notNull().default('user'),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    emailIdx: uniqueIndex('emailIdx').on(table.email),
+  })
+)
 
 export const accounts = pgTable(
   'account',

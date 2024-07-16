@@ -7,17 +7,19 @@ import { eq } from 'drizzle-orm'
 import { AuthError } from 'next-auth'
 import { revalidatePath } from 'next/cache'
 
+import { sendEmail } from '@/utils/mailgun'
+import { EMAIL_TEMPLATES } from '@/constants/email-templates'
 import { db, dbPool } from '@/server'
 import { auth, signIn } from '@/server/auth'
 import { passwordResetTokens, users } from '@/server/schema'
 import { makeEmailToken } from '@/server/actions/email-token.action'
-import { makeTwoFactorCode } from '@/server/actions/two-factor-code.action'
+import { makeAndSendTwoFactorCode } from '@/server/actions/two-factor-code.action'
 import { makePasswordResetToken } from '@/server/actions/password-reset-token'
-import { sendEmail } from '@/utils/mailgun'
 import { actionClient } from '@/lib/safe-action'
 import { updateProfileSchema } from '@/lib/schema-validations/profile.schema'
 import {
   forgotPasswordSchema,
+  loginByCodeSchema,
   loginSchema,
   registerSchema,
   resetPasswordSchema,
@@ -44,10 +46,10 @@ export const emailRegister = actionClient
       name,
       email,
       subject: 'Verify your email - Sprout & Scribble',
-      template: 'email_verification',
-      variables: {
-        verification_link: `${process.env.NEXT_PUBLIC_URL}/verify-email?token=${emailTokenResponse.data.token}`,
-      },
+      html: EMAIL_TEMPLATES.EMAIL_VERIFICATION({
+        name,
+        link: `${process.env.NEXT_PUBLIC_URL}/verify-email?token=${emailTokenResponse.data.token}`,
+      }),
     })
     if (!sendEmailResponse.success) return sendEmailResponse
 
@@ -71,42 +73,25 @@ export const emailRegister = actionClient
   })
 
 export const loginByEmail = actionClient.schema(loginSchema).action(async ({ parsedInput: { email, password } }) => {
+  const emailLoginError: { success: false; message: string } = {
+    success: false,
+    message: 'Invalid email or password',
+  }
+
   try {
     const existingUser = await db.query.users.findFirst({ where: eq(users.email, email) })
-    if (!existingUser || !existingUser.password) {
-      throw new AuthError('Invalid email or password')
-    }
 
-    const isValid = await bcrypt.compare(password, existingUser.password)
-    if (!isValid) {
-      throw new AuthError('Invalid email or password')
+    if (!existingUser || !existingUser.password) {
+      return emailLoginError
     }
 
     if (existingUser.isTwoFactorEnabled) {
-      const twoFactorCodeResponse = await makeTwoFactorCode(email)
-      if (twoFactorCodeResponse.success === false) return twoFactorCodeResponse
-
-      const response = await sendEmail({
-        name: existingUser.name || 'there',
-        email,
-        subject: 'Login verification code - Sprout & Scribble',
-        template: 'two_factor',
-        variables: {
-          name: existingUser.name || 'there',
-          verification_code: twoFactorCodeResponse.data.code,
-        },
-      })
-      if (response.success === false)
-        return {
-          success: false,
-          message: response.message,
-        }
-
-      return {
-        success: true,
-        message: 'Verification code sent',
-        data: twoFactorCodeResponse.data,
+      const isValid = await bcrypt.compare(password, existingUser.password)
+      if (!isValid) {
+        return emailLoginError
       }
+
+      return makeAndSendTwoFactorCode({ email, name: existingUser.name ?? undefined })
     } else {
       await signIn('login-by-email', {
         email,
@@ -142,6 +127,27 @@ export async function loginByToken(token: string) {
   }
 }
 
+export const loginByCode = actionClient
+  .schema(loginByCodeSchema)
+  .action(async ({ parsedInput: { code, email, id } }) => {
+    try {
+      await signIn('login-by-code', {
+        code,
+        email,
+        id,
+        redirectTo: '/',
+      })
+    } catch (error) {
+      if (error instanceof AuthError) {
+        return {
+          success: false,
+          message: error.message,
+        }
+      }
+      throw error
+    }
+  })
+
 export const forgotPassword = actionClient.schema(forgotPasswordSchema).action(async ({ parsedInput: { email } }) => {
   const existingUser = await db.query.users.findFirst({ where: eq(users.email, email) })
   if (!existingUser) {
@@ -158,11 +164,10 @@ export const forgotPassword = actionClient.schema(forgotPasswordSchema).action(a
     name: existingUser.name || 'there',
     email,
     subject: 'Reset your password - Sprout & Scribble',
-    template: 'password_reset',
-    variables: {
+    html: EMAIL_TEMPLATES.PASSWORD_RESET({
       name: existingUser.name || 'there',
-      reset_password_link: `${process.env.NEXT_PUBLIC_URL}/reset-password?token=${passwordResetTokenResponse.data.token}`,
-    },
+      link: `${process.env.NEXT_PUBLIC_URL}/reset-password?token=${passwordResetTokenResponse.data.token}`,
+    }),
   })
   if (!sendPasswordResetResponse.success) return sendPasswordResetResponse
 

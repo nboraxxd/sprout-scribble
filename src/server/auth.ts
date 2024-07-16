@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import NextAuth, { AuthError } from 'next-auth'
 import Google from 'next-auth/providers/google'
 import Github from 'next-auth/providers/github'
@@ -7,12 +7,16 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import Credentials from 'next-auth/providers/credentials'
 
 import { db } from '@/server'
-import { accounts, emailVerificationTokens, users } from '@/server/schema'
+import { accounts, emailVerificationTokens, twoFactorCodes, users } from '@/server/schema'
 import { getEmailTokenByToken } from '@/server/actions/email-token.action'
-import { loginByTokenSchema, loginSchema } from '@/lib/schema-validations/auth.schema'
+import { loginByCodeSchema, loginByTokenSchema, loginSchema } from '@/lib/schema-validations/auth.schema'
+
+class LoginByTokenError extends AuthError {
+  message = 'Token expired or invalid'
+}
 
 class LoginByCodeError extends AuthError {
-  message = 'Token expired or invalid'
+  message = 'Code expired or invalid'
 }
 
 class LoginByEmailError extends AuthError {
@@ -93,17 +97,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       authorize: async (credentials) => {
         const loginByTokenFields = loginByTokenSchema.safeParse(credentials)
 
-        if (credentials.token && loginByTokenFields.success) {
+        if (loginByTokenFields.success) {
           const emailTokenResponse = await getEmailTokenByToken(loginByTokenFields.data.token)
-          if (!emailTokenResponse.success) throw new LoginByCodeError()
+          if (!emailTokenResponse.success) throw new LoginByTokenError()
 
           const isExpired = new Date(emailTokenResponse.data.expires) < new Date()
-
-          if (isExpired) throw new LoginByCodeError()
+          if (isExpired) throw new LoginByTokenError()
 
           const existingUser = await db.query.users.findFirst({ where: eq(users.email, emailTokenResponse.data.email) })
-
-          if (!existingUser) throw new LoginByCodeError()
+          if (!existingUser) throw new LoginByTokenError()
 
           const [[userResponse]] = await Promise.all([
             db.update(users).set({ emailVerified: new Date() }).where(eq(users.email, existingUser.email)).returning({
@@ -112,11 +114,73 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               email: users.email,
               emailVerified: users.emailVerified,
               role: users.role,
+              image: users.image,
+              isTwoFactorEnabled: users.isTwoFactorEnabled,
+              createdAt: users.createdAt,
+              updatedAt: users.updatedAt,
             }),
             db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.id, emailTokenResponse.data.id)),
           ])
 
           return userResponse
+        }
+
+        return null
+      },
+    }),
+    Credentials({
+      id: 'login-by-code',
+      credentials: {
+        id: {},
+        email: {},
+        code: {},
+      },
+      authorize: async (credentials) => {
+        const loginByCodeFields = loginByCodeSchema.safeParse(credentials)
+
+        if (loginByCodeFields.success) {
+          const { code, email, id } = loginByCodeFields.data
+
+          const twoFactorCodeResponse = await db.query.twoFactorCodes.findFirst({
+            where: (twoFactorCodes, { eq }) =>
+              and(eq(twoFactorCodes.email, email), eq(twoFactorCodes.code, code), eq(twoFactorCodes.id, id)),
+          })
+
+          if (!twoFactorCodeResponse) throw new LoginByCodeError()
+
+          const isExpired = new Date(twoFactorCodeResponse.expires) < new Date()
+          if (isExpired) throw new LoginByTokenError()
+
+          const [user] = await Promise.all([
+            db.query.users.findFirst({ where: eq(users.email, email) }),
+            db.delete(twoFactorCodes).where(eq(twoFactorCodes.id, id)),
+          ])
+
+          if (!user) throw new LoginByTokenError('User not found')
+
+          const {
+            createdAt,
+            email: _email,
+            emailVerified,
+            id: userId,
+            image,
+            isTwoFactorEnabled,
+            name,
+            role,
+            updatedAt,
+          } = user
+
+          return {
+            createdAt,
+            email: _email,
+            emailVerified,
+            id: userId,
+            image,
+            isTwoFactorEnabled,
+            name,
+            role,
+            updatedAt,
+          }
         }
 
         return null
@@ -137,19 +201,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const user = await db.query.users.findFirst({
             where: eq(users.email, email),
           })
-
           if (!user || !user.password) throw new LoginByEmailError()
 
           const isValid = await bcrypt.compare(password, user.password)
-
           if (!isValid) throw new LoginByEmailError()
 
+          const { createdAt, email: _email, emailVerified, id, image, isTwoFactorEnabled, name, role, updatedAt } = user
+
           return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            emailVerified: user.emailVerified,
-            role: user.role,
+            createdAt,
+            email: _email,
+            emailVerified,
+            id,
+            image,
+            isTwoFactorEnabled,
+            name,
+            role,
+            updatedAt,
           }
         }
 
