@@ -24,7 +24,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export default function AuthButton() {
-  // const { session, status } = useCurrentSession()
   const { data: session, status } = useSessionData()
 
   if (status === 'loading') return <Skeleton className="size-10" />
@@ -52,11 +51,11 @@ function UserButton({ user }: { user?: ExtendUser }) {
           <UserAvatar user={user} variant="square" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64 p-4 font-medium" align="end">
+      <DropdownMenuContent className="w-56 p-4 font-medium sm:w-64" align="end">
         <DropdownMenuLabel className="mb-4 flex flex-col items-center gap-1 rounded-lg bg-primary/25 p-4 text-xs">
           <UserAvatar user={user} />
           <p className="mt-1 line-clamp-1">{user.name}</p>
-          <p className="line-clamp-1 font-medium text-secondary-foreground">{user.email}</p>
+          <p className="line-clamp-1 break-all font-medium text-secondary-foreground">{user.email}</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>

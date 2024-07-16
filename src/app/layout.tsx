@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import NextTopLoader from 'nextjs-toploader'
 import { Inter as FontSans } from 'next/font/google'
 
 import { cn } from '@/utils'
@@ -31,6 +32,7 @@ export default function RootLayout({
       <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <SessionDataProvider>
+            <NextTopLoader showSpinner={false} />
             <div className="container sm:px-6 lg:px-8">
               <Header />
               {children}

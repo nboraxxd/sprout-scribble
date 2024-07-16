@@ -13,10 +13,10 @@ export const metadata: Metadata = {
 export default async function ProfilePage() {
   const session = await auth()
 
-  if (!session || !session.user) redirect('/')
+  if (!session) redirect('/')
 
   return (
-    <Card className="mx-auto max-w-2xl grow">
+    <Card className="mx-auto w-full max-w-2xl grow">
       <CardHeader>
         <CardTitle>Profile</CardTitle>
         <CardDescription>Update your profile information.</CardDescription>
