@@ -9,13 +9,13 @@ export async function sendEmail({ name, email, subject, html }: SendEmailParams)
     const client = mailgun.client({ username: 'api', key: process.env.MAILGUN_API_KEY! })
 
     const data: MailgunMessageData = {
-      from: `Sprout & Scribble <no-reply@${process.env.NEXT_PUBLIC_DOMAIN}>`,
+      from: `Sprout & Scribble <no-reply@${process.env.MAILGUN_DOMAIN}>`,
       to: `${name} <${email}>`,
       subject,
       html,
     }
 
-    await client.messages.create(process.env.NEXT_PUBLIC_DOMAIN, data)
+    await client.messages.create(process.env.MAILGUN_DOMAIN, data)
 
     return {
       success: true,

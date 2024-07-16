@@ -276,7 +276,7 @@ export const updateProfile = actionClient
       .set(omitBy({ name, password: hashedPassword, image, isTwoFactorEnabled }, isUndefined))
       .where(eq(users.id, session.user.id))
 
-    revalidatePath('/dashboard/profile')
+    revalidatePath('/dashboard/profile', 'page')
 
     return {
       success: true,
