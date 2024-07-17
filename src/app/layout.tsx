@@ -4,7 +4,7 @@ import { Inter as FontSans } from 'next/font/google'
 
 import { cn } from '@/utils'
 import { Toaster } from '@/components/ui/sonner'
-import { CallToVerify, Header } from '@/components/common'
+import { CallToVerify, Footer, Header } from '@/components/common'
 import { SessionDataProvider, ThemeProvider } from '@/components/provider'
 import './globals.css'
 
@@ -38,6 +38,7 @@ export default function RootLayout({
               <Header />
               {children}
             </div>
+            <Footer />
             <Toaster />
           </SessionDataProvider>
         </ThemeProvider>

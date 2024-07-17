@@ -76,6 +76,11 @@ export default function UpdateProfileForm() {
     if (!user || status === 'executing') return
     setErrorMessage('')
 
+    if (!user.emailVerified) {
+      setErrorMessage('You need to verify your email before updating your profile.')
+      return
+    }
+
     const changes = omitBy(
       {
         name: user.name !== values.name ? values.name : undefined,
