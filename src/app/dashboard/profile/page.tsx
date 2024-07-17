@@ -1,7 +1,5 @@
 import { Metadata } from 'next'
-import { redirect } from 'next/navigation'
 
-import { auth } from '@/server/auth'
 import { UpdateProfileForm } from '@/components/form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -11,10 +9,6 @@ export const metadata: Metadata = {
 }
 
 export default async function ProfilePage() {
-  const session = await auth()
-
-  if (!session) redirect('/')
-
   return (
     <Card className="mx-auto w-full max-w-2xl grow">
       <CardHeader>
@@ -22,7 +16,7 @@ export default async function ProfilePage() {
         <CardDescription>Update your profile information.</CardDescription>
       </CardHeader>
       <CardContent>
-        <UpdateProfileForm user={session.user} />
+        <UpdateProfileForm />
       </CardContent>
     </Card>
   )

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: 'Home',
 }
 
-export default function Homepgae() {
+export default function Homepage() {
   return (
     <div>
       <Button>Click me</Button>

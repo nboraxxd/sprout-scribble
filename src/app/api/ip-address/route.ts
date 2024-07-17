@@ -16,7 +16,6 @@ export async function GET() {
       }
     }
   }
-  console.log('🔥 ~ GET ~ privateIP:', privateIP)
 
   return Response.json({ privateIP })
 }

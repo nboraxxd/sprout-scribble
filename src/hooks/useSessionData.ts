@@ -26,7 +26,7 @@ export function useSessionData(): TSessionContextValue {
   }
 
   const sessionContent: TSessionContextValue = useContext(SessionContext) || {
-    data: null,
+    session: null,
     status: 'unauthenticated',
     async update(): Promise<Session | null | undefined> {
       return undefined

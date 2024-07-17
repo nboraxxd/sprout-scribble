@@ -5,9 +5,13 @@ import { db } from '@/server'
 import { eq } from 'drizzle-orm'
 import { randomUUID } from 'crypto'
 
-import { Response } from '@/types'
-import { emailVerificationTokens } from '@/server/schema'
+import { MessageResponse, Response } from '@/types'
 import { TokenInfo } from '@/types/token.type'
+import { emailVerificationTokens } from '@/server/schema'
+import { actionClient } from '@/lib/safe-action'
+import { resendTokenOrCodeSchema } from '@/lib/schema-validations/common.schema'
+import { sendEmail } from '@/utils/mailgun'
+import { EMAIL_TEMPLATES } from '@/constants/email-templates'
 
 export async function getEmailTokenByEmail(email: string): Promise<Response<TokenInfo>> {
   const verificationToken = await db.query.emailVerificationTokens.findFirst({
@@ -18,25 +22,6 @@ export async function getEmailTokenByEmail(email: string): Promise<Response<Toke
     return {
       success: false,
       message: 'Email token not found',
-    }
-  }
-
-  return {
-    success: true,
-    message: 'Get email token successfully',
-    data: verificationToken,
-  }
-}
-
-export async function getEmailTokenByToken(token: string): Promise<Response<TokenInfo>> {
-  const verificationToken = await db.query.emailVerificationTokens.findFirst({
-    where: eq(emailVerificationTokens.token, token),
-  })
-
-  if (!verificationToken) {
-    return {
-      success: false,
-      message: 'Invalid email token',
     }
   }
 
@@ -91,3 +76,36 @@ export async function makeEmailToken(email: string): Promise<Response<TokenInfo>
     }
   }
 }
+
+export async function makeAndSendEmailToken({
+  email,
+  name,
+}: {
+  email: string
+  name: string
+}): Promise<MessageResponse> {
+  const emailTokenResponse = await makeEmailToken(email)
+  if (!emailTokenResponse.success) return emailTokenResponse
+
+  const sendEmailResponse = await sendEmail({
+    name,
+    email,
+    subject: 'Verify your email - Sprout & Scribble',
+    html: EMAIL_TEMPLATES.EMAIL_VERIFICATION({
+      name,
+      link: `${process.env.NEXT_PUBLIC_URL}/verify-email?token=${emailTokenResponse.data.token}`,
+    }),
+  })
+  if (!sendEmailResponse.success) return sendEmailResponse
+
+  return {
+    success: true,
+    message: sendEmailResponse.message,
+  }
+}
+
+export const resendEmailToken = actionClient
+  .schema(resendTokenOrCodeSchema)
+  .action(async ({ parsedInput: { email, name } }) => {
+    return makeAndSendEmailToken({ email, name: name || 'there' })
+  })

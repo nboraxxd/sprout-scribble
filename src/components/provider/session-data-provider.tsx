@@ -1,9 +1,11 @@
 'use client'
 
-import React, { Context, createContext, type PropsWithChildren, useEffect, useMemo, useState } from 'react'
-import { usePathname } from 'next/navigation'
 import type { Session } from 'next-auth'
+import { usePathname } from 'next/navigation'
 import { getCsrfToken } from 'next-auth/react'
+import React, { Context, createContext, type PropsWithChildren, useEffect, useMemo, useState, useRef } from 'react'
+
+import { SESSION_STATUS } from '@/constants'
 
 /**
  * Provider props
@@ -16,7 +18,11 @@ type TSessionProviderProps = PropsWithChildren<{
  * Type of the returned Provider elements with data which contains session data, status that shows the state of the Provider, and update which is the function to update session data
  */
 type TUpdateSession = (data?: any) => Promise<Session | null | undefined>
-export type TSessionContextValue = { data: Session | null; status: string; update: TUpdateSession }
+export type TSessionContextValue = {
+  session: Session | null
+  status: keyof typeof SESSION_STATUS
+  update: TUpdateSession
+}
 
 /**
  * React context to keep session through renders
@@ -26,11 +32,15 @@ export const SessionContext: Context<TSessionContextValue | undefined> = createC
 >(undefined)
 
 export default function SessionDataProvider({ session: initialSession = null, children }: TSessionProviderProps) {
+  const retrieveSessionRef = useRef<unknown>(null)
+
   const [session, setSession] = useState<Session | null>(initialSession)
   const [loading, setLoading] = useState<boolean>(!initialSession)
   const pathname: string = usePathname()
 
   useEffect(() => {
+    let timeout: NodeJS.Timeout | null = null
+
     const fetchSession = async () => {
       if (!initialSession) {
         // Retrive data from session callback
@@ -42,13 +52,29 @@ export default function SessionDataProvider({ session: initialSession = null, ch
       }
     }
 
-    fetchSession().finally()
+    if (!retrieveSessionRef.current) {
+      retrieveSessionRef.current = fetchSession
+
+      fetchSession().finally()
+
+      timeout = setTimeout(() => {
+        retrieveSessionRef.current = null
+      }, 500)
+    }
+
+    return () => {
+      if (timeout) clearTimeout(timeout)
+    }
   }, [initialSession, pathname])
 
   const sessionData = useMemo(
     () => ({
-      data: session,
-      status: loading ? 'loading' : session ? 'authenticated' : 'unauthenticated',
+      session,
+      status: loading
+        ? SESSION_STATUS.loading
+        : session
+          ? SESSION_STATUS.authenticated
+          : SESSION_STATUS.unauthenticated,
       async update(data?: any) {
         if (loading || !session) return
 

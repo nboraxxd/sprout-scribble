@@ -4,7 +4,7 @@ import { Inter as FontSans } from 'next/font/google'
 
 import { cn } from '@/utils'
 import { Toaster } from '@/components/ui/sonner'
-import { Header } from '@/components/common'
+import { CallToVerify, Header } from '@/components/common'
 import { SessionDataProvider, ThemeProvider } from '@/components/provider'
 import './globals.css'
 
@@ -33,6 +33,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <SessionDataProvider>
             <NextTopLoader showSpinner={false} />
+            <CallToVerify />
             <div className="container sm:px-6 lg:px-8">
               <Header />
               {children}

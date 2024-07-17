@@ -12,7 +12,7 @@ import { EMAIL_TEMPLATES } from '@/constants/email-templates'
 import { db, dbPool } from '@/server'
 import { auth, signIn } from '@/server/auth'
 import { passwordResetTokens, users } from '@/server/schema'
-import { makeEmailToken } from '@/server/actions/email-token.action'
+import { makeAndSendEmailToken } from '@/server/actions/email-token.action'
 import { makeAndSendTwoFactorCode } from '@/server/actions/two-factor-code.action'
 import { makePasswordResetToken } from '@/server/actions/password-reset-token'
 import { actionClient } from '@/lib/safe-action'
@@ -32,43 +32,25 @@ export const emailRegister = actionClient
 
     const existingUser = await db.query.users.findFirst({ where: eq(users.email, email) })
 
-    if (existingUser && existingUser.emailVerified) {
+    if (existingUser) {
       return {
         success: false,
         message: 'Email already registered',
       }
     }
 
-    const emailTokenResponse = await makeEmailToken(email)
-    if (!emailTokenResponse.success) return emailTokenResponse
+    const makeAndSendEmailResponse = await makeAndSendEmailToken({ email, name })
+    if (!makeAndSendEmailResponse.success) return makeAndSendEmailResponse
 
-    const sendEmailResponse = await sendEmail({
+    await db.insert(users).values({
       name,
       email,
-      subject: 'Verify your email - Sprout & Scribble',
-      html: EMAIL_TEMPLATES.EMAIL_VERIFICATION({
-        name,
-        link: `${process.env.NEXT_PUBLIC_URL}/verify-email?token=${emailTokenResponse.data.token}`,
-      }),
+      password: hashedPassword,
     })
-    if (!sendEmailResponse.success) return sendEmailResponse
-
-    if (!existingUser) {
-      await db.insert(users).values({
-        name,
-        email,
-        password: hashedPassword,
-      })
-    } else {
-      await db.update(users).set({
-        name,
-        password: hashedPassword,
-      })
-    }
 
     return {
       success: true,
-      message: sendEmailResponse.message,
+      message: makeAndSendEmailResponse.message,
     }
   })
 
@@ -179,43 +161,32 @@ export const forgotPassword = actionClient.schema(forgotPasswordSchema).action(a
 
 export const resetPassword = actionClient
   .schema(resetPasswordSchema)
-  .action(async ({ parsedInput: { password, confirmPassword, token } }) => {
-    if (password !== confirmPassword) {
-      return {
-        success: false,
-        message: 'Passwords do not match',
-      }
-    }
+  .action(async ({ parsedInput: { password, token } }) => {
+    const tokenError = {
+      success: false,
+      message: 'Token expired or invalid',
+    } as const
 
     if (!token) {
       return {
         success: false,
         message: 'Token not found',
-      }
+      } as const
     }
 
     const existingToken = await db.query.passwordResetTokens.findFirst({ where: eq(passwordResetTokens.token, token) })
     if (!existingToken) {
-      return {
-        success: false,
-        message: 'Token expired or invalid',
-      }
+      return tokenError
     }
 
     const isExpired = new Date(existingToken.expires) < new Date()
     if (isExpired) {
-      return {
-        success: false,
-        message: 'Token expired or invalid',
-      }
+      return tokenError
     }
 
     const existingUser = await db.query.users.findFirst({ where: eq(users.email, existingToken.email) })
     if (!existingUser) {
-      return {
-        success: false,
-        message: 'Token expired or invalid',
-      }
+      return tokenError
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)

@@ -10,7 +10,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAction } from 'next-safe-action/hooks'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import { ExtendUser } from '@root/next-auth'
 import { useUploadThing } from '@/utils/uploadthing'
 import { useSessionData } from '@/hooks/useSessionData'
 import { updateProfile } from '@/server/actions/user.action'
@@ -22,8 +21,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { FormMessages } from '@/components/form'
 import { UploadThingError } from 'uploadthing/server'
+import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
 
-export default function UpdateProfileForm({ user }: { user: ExtendUser }) {
+export default function UpdateProfileForm() {
   const [errorMessage, setErrorMessage] = useState('')
 
   const [file, setFile] = useState<File | null>(null)
@@ -35,17 +36,18 @@ export default function UpdateProfileForm({ user }: { user: ExtendUser }) {
     },
   })
 
-  const { update: updateSession } = useSessionData()
   const { status, executeAsync } = useAction(updateProfile)
+  const { update: updateSession, session } = useSessionData()
+  const user = session?.user
 
   const form = useForm<UpdateProfileSchemaType>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {
-      name: user.name ?? '',
-      image: user.image ?? undefined,
+      name: user?.name ?? '',
+      image: user?.image ?? undefined,
       password: undefined,
       newPassword: undefined,
-      isTwoFactorEnabled: user.isTwoFactorEnabled,
+      isTwoFactorEnabled: user?.isTwoFactorEnabled,
       oAuthPassword: undefined,
     },
   })
@@ -60,24 +62,19 @@ export default function UpdateProfileForm({ user }: { user: ExtendUser }) {
   }, [file, image])
 
   useEffect(() => {
-    if (status === 'executing') {
-      setErrorMessage('')
-    }
-  }, [status])
-
-  useEffect(() => {
     form.reset({
-      name: user.name ?? '',
-      image: user.image ?? undefined,
+      name: user?.name ?? '',
+      image: user?.image ?? undefined,
       password: undefined,
       newPassword: undefined,
-      isTwoFactorEnabled: user.isTwoFactorEnabled,
+      isTwoFactorEnabled: user?.isTwoFactorEnabled,
       oAuthPassword: undefined,
     })
-  }, [form, user.image, user.isTwoFactorEnabled, user.name])
+  }, [form, user?.image, user?.isTwoFactorEnabled, user?.name])
 
   async function onSubmit(values: UpdateProfileSchemaType) {
-    if (status === 'executing') return
+    if (!user || status === 'executing') return
+    setErrorMessage('')
 
     const changes = omitBy(
       {
@@ -133,118 +130,144 @@ export default function UpdateProfileForm({ user }: { user: ExtendUser }) {
     )
   }
 
+  if (!user) return <FormFallback />
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Avatar */}
-        <FormField
-          control={form.control}
-          name="image"
-          render={() => (
-            <FormItem className="flex flex-col items-center gap-1">
-              <Avatar className="size-20">
-                {previewImage ? (
-                  <Image
-                    src={previewImage}
-                    alt={user.name || 'User avatar'}
-                    width={80}
-                    height={80}
-                    className="relative flex size-full shrink-0 overflow-hidden"
-                    priority
-                  />
-                ) : (
-                  <AvatarFallback className="text-2xl font-semibold">
-                    {user.name
-                      ? user.name.slice(0, 2).toLocaleUpperCase()
-                      : user.email?.slice(0, 2).toLocaleUpperCase()}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <Input
-                placeholder="Upload image"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                ref={imageInputRef}
-                onChange={(ev) => {
-                  const file = ev.target.files?.[0]
-                  file && setFile(file)
-                }}
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                className="gap-1.5"
-                onClick={() => imageInputRef.current?.click()}
-              >
-                <UploadIcon className="size-4" />
-                <span>{previewImage ? 'Change image' : 'Upload image'}</span>
-              </Button>
-              <FormDescription>Maxium image size: 2MB</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Name */}
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Bruch Wayne" type="text" autoComplete="name" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {user.hasPassword ? (
-          <>
-            {/* Password */}
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      value={field.value ?? ''}
-                      onChange={(ev) => {
-                        field.onChange(ev.target.value !== '' ? ev.target.value : undefined)
-
-                        ev.target.value === '' && form.trigger('newPassword')
-                      }}
-                      placeholder="*********"
-                      type="password"
-                      autoComplete="current-password"
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Avatar */}
+          <FormField
+            control={form.control}
+            name="image"
+            render={() => (
+              <FormItem className="flex flex-col items-center gap-1">
+                <Avatar className="size-20">
+                  {previewImage ? (
+                    <Image
+                      src={previewImage}
+                      alt={user.name || 'User avatar'}
+                      width={80}
+                      height={80}
+                      className="relative flex size-full shrink-0 overflow-hidden"
+                      priority
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* New password */}
+                  ) : (
+                    <AvatarFallback className="text-2xl font-semibold">
+                      {user.name
+                        ? user.name.slice(0, 2).toLocaleUpperCase()
+                        : user.email?.slice(0, 2).toLocaleUpperCase()}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <Input
+                  placeholder="Upload image"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  ref={imageInputRef}
+                  onChange={(ev) => {
+                    const file = ev.target.files?.[0]
+                    file && setFile(file)
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="gap-1.5"
+                  onClick={() => imageInputRef.current?.click()}
+                >
+                  <UploadIcon className="size-4" />
+                  <span>{previewImage ? 'Change image' : 'Upload image'}</span>
+                </Button>
+                <FormDescription>Maxium image size: 2MB</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {/* Name */}
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Bruce Wayne" type="text" autoComplete="name" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {user.hasPassword ? (
+            <>
+              {/* Password */}
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ''}
+                        onChange={(ev) => {
+                          field.onChange(ev.target.value !== '' ? ev.target.value : undefined)
+                          ev.target.value === '' && form.trigger('newPassword')
+                        }}
+                        placeholder="*********"
+                        type="password"
+                        autoComplete="current-password"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* New password */}
+              <FormField
+                control={form.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New password</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ''}
+                        onChange={(ev) => {
+                          field.onChange(ev.target.value !== '' ? ev.target.value : undefined)
+                          ev.target.value === '' && form.trigger('password')
+                        }}
+                        placeholder="*********"
+                        type="password"
+                        autoComplete="new-password"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          ) : null}
+          {/* OAuth password */}
+          {user.isOAuth && !user.hasPassword ? (
             <FormField
               control={form.control}
-              name="newPassword"
+              name="oAuthPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>New password</FormLabel>
+                  <FormLabel>Set password</FormLabel>
+                  <FormDescription>
+                    Set a password to use with your account. You can use this password to login.
+                  </FormDescription>
                   <FormControl>
                     <Input
                       {...field}
                       value={field.value ?? ''}
-                      onChange={(ev) => {
-                        field.onChange(ev.target.value !== '' ? ev.target.value : undefined)
-                        ev.target.value === '' && form.trigger('password')
-                      }}
+                      onChange={(ev) => field.onChange(ev.target.value !== '' ? ev.target.value : undefined)}
                       placeholder="*********"
                       type="password"
                       autoComplete="new-password"
@@ -254,73 +277,88 @@ export default function UpdateProfileForm({ user }: { user: ExtendUser }) {
                 </FormItem>
               )}
             />
-          </>
-        ) : null}
-
-        {/* OAuth password */}
-        {user.isOAuth && !user.hasPassword ? (
+          ) : null}
+          {/* Two Factor Enabled */}
           <FormField
             control={form.control}
-            name="oAuthPassword"
+            name="isTwoFactorEnabled"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Set password</FormLabel>
+                <div className="flex items-center gap-3">
+                  <FormLabel>Two factor authentication</FormLabel>
+                  <FormControl>
+                    <Switch
+                      checked={user.hasPassword ? field.value : undefined}
+                      onCheckedChange={user.hasPassword ? field.onChange : undefined}
+                      disabled={!user.hasPassword}
+                    />
+                  </FormControl>
+                </div>
                 <FormDescription>
-                  Set a password to use with your account. You can use this password to login.
+                  {user.hasPassword
+                    ? `${user.isTwoFactorEnabled ? 'Disable' : 'Enable'} two factor authentication for your account.`
+                    : 'Two factor authentication is only available for accounts with password.'}
                 </FormDescription>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value ?? ''}
-                    onChange={(ev) => field.onChange(ev.target.value !== '' ? ev.target.value : undefined)}
-                    placeholder="*********"
-                    type="password"
-                    autoComplete="new-password"
-                  />
-                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        ) : null}
+          {/* Messages */}
+          <FormMessages errorMessage={errorMessage} />
+          {/* Submit */}
+          <div className="flex justify-end">
+            <Button type="submit" className="gap-1.5" disabled={status === 'executing' || isUploading}>
+              {status === 'executing' || isUploading ? <LoaderCircleIcon className="size-4 animate-spin" /> : null}
+              {isUploading ? 'Uploading image...' : status === 'executing' ? 'Updating profile...' : 'Save changes'}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </>
+  )
+}
 
-        {/* Two Factor Enabled */}
-        <FormField
-          control={form.control}
-          name="isTwoFactorEnabled"
-          render={({ field }) => (
-            <FormItem>
-              <div className="flex items-center gap-3">
-                <FormLabel>Two factor authentication</FormLabel>
-                <FormControl>
-                  <Switch
-                    checked={user.hasPassword ? field.value : undefined}
-                    onCheckedChange={user.hasPassword ? field.onChange : undefined}
-                    disabled={!user.hasPassword}
-                  />
-                </FormControl>
-              </div>
-              <FormDescription>
-                {user.hasPassword
-                  ? `${user.isTwoFactorEnabled ? 'Disable' : 'Enable'} two factor authentication for your account.`
-                  : 'Two factor authentication is only available for accounts with password.'}
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+function FormFallback() {
+  return (
+    <div className="space-y-6">
+      {/* Avatar */}
+      <div className="flex flex-col items-center gap-1 space-y-2">
+        <Avatar className="size-20">
+          <Skeleton className="size-full" />
+        </Avatar>
+        <Button type="button" size="sm" variant="secondary" disabled className="gap-1.5">
+          <UploadIcon className="size-4" />
+          <span>Upload image</span>
+        </Button>
+        <p className="text-sm text-muted-foreground">Maxium image size: 2MB</p>
+      </div>
+      {/* Name */}
+      <div className="flex flex-col gap-2">
+        <Label>Name</Label>
+        <Input readOnly disabled placeholder="Bruce Wayne" />
+      </div>
+      {/* Password */}
+      <div className="flex flex-col gap-2">
+        <Label>Password</Label>
+        <Input readOnly disabled placeholder="*********" />
+      </div>
+      {/* New password */}
+      <div className="flex flex-col gap-2">
+        <Label>New password</Label>
+        <Input readOnly disabled placeholder="*********" />
+      </div>
 
-        {/* Messages */}
-        <FormMessages errorMessage={errorMessage} />
-
-        {/* Submit */}
-        <div className="flex justify-end">
-          <Button type="submit" className="gap-1.5" disabled={status === 'executing' || isUploading}>
-            {status === 'executing' || isUploading ? <LoaderCircleIcon className="size-4 animate-spin" /> : null}
-            {isUploading ? 'Uploading image...' : status === 'executing' ? 'Updating profile...' : 'Save changes'}
-          </Button>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <Label>Two factor authentication</Label>
+          <Switch disabled />
         </div>
-      </form>
-    </Form>
+        <p className="text-sm text-muted-foreground">Enable two factor authentication for your account.</p>
+      </div>
+
+      <div className="flex justify-end">
+        <Button disabled>Save changes</Button>
+      </div>
+    </div>
   )
 }

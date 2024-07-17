@@ -57,7 +57,7 @@ export default function RegisterForm() {
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Bruch Wayne" type="text" autoComplete="name" />
+                <Input {...field} placeholder="Bruce Wayne" type="text" autoComplete="name" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -70,7 +70,7 @@ export default function RegisterForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="bruchwayne@dc.com" type="email" autoComplete="email" />
+                <Input {...field} placeholder="bruce@wayne.dc" type="email" autoComplete="email" />
               </FormControl>
               <FormMessage />
             </FormItem>

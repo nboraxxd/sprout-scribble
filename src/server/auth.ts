@@ -8,7 +8,6 @@ import Credentials from 'next-auth/providers/credentials'
 
 import { db } from '@/server'
 import { accounts, emailVerificationTokens, twoFactorCodes, users } from '@/server/schema'
-import { getEmailTokenByToken } from '@/server/actions/email-token.action'
 import { loginByCodeSchema, loginByTokenSchema, loginSchema } from '@/lib/schema-validations/auth.schema'
 
 class LoginByTokenError extends AuthError {
@@ -98,13 +97,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const loginByTokenFields = loginByTokenSchema.safeParse(credentials)
 
         if (loginByTokenFields.success) {
-          const emailTokenResponse = await getEmailTokenByToken(loginByTokenFields.data.token)
-          if (!emailTokenResponse.success) throw new LoginByTokenError()
+          const emailTokenResponse = await db.query.emailVerificationTokens.findFirst({
+            where: eq(emailVerificationTokens.token, loginByTokenFields.data.token),
+          })
+          if (!emailTokenResponse) throw new LoginByTokenError()
 
-          const isExpired = new Date(emailTokenResponse.data.expires) < new Date()
+          const isExpired = new Date(emailTokenResponse.expires) < new Date()
           if (isExpired) throw new LoginByTokenError()
 
-          const existingUser = await db.query.users.findFirst({ where: eq(users.email, emailTokenResponse.data.email) })
+          const existingUser = await db.query.users.findFirst({ where: eq(users.email, emailTokenResponse.email) })
           if (!existingUser) throw new LoginByTokenError()
 
           const [[userResponse]] = await Promise.all([
@@ -119,7 +120,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               createdAt: users.createdAt,
               updatedAt: users.updatedAt,
             }),
-            db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.id, emailTokenResponse.data.id)),
+            db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.id, emailTokenResponse.id)),
           ])
 
           return userResponse

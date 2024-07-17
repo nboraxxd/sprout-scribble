@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { BarChartIcon, PackageIcon, PenSquareIcon, SettingsIcon, TruckIcon } from 'lucide-react'
 
 import { cn } from '@/utils'
-import { ExtendUser } from '@root/next-auth'
+import { useSessionData } from '@/hooks/useSessionData'
 
 const navLinks = [
   {
@@ -41,9 +41,11 @@ const navLinks = [
   },
 ] as const
 
-export default function DashboardNav({ user }: { user: ExtendUser }) {
-  const pathname = usePathname()
+export default function DashboardNav() {
   const MotionLink = motion(Link)
+
+  const pathname = usePathname()
+  const { session } = useSessionData()
 
   return (
     <nav className="mx-auto my-4 w-full max-w-2xl overflow-x-auto py-2">
@@ -51,7 +53,7 @@ export default function DashboardNav({ user }: { user: ExtendUser }) {
         {navLinks.map((link) => {
           const Icon = link.icon
 
-          return !link.adminRequired || (link.adminRequired && user.role === 'admin') ? (
+          return !link.adminRequired || (link.adminRequired && session && session.user.role === 'admin') ? (
             <li key={link.href} className="relative">
               <MotionLink
                 className={cn('flex flex-col items-center gap-1 px-2 py-1', pathname === link.href && 'text-primary')}

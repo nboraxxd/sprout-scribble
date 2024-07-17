@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export default function AuthButton() {
-  const { data: session, status } = useSessionData()
+  const { session, status } = useSessionData()
 
   if (status === 'loading') return <Skeleton className="size-10" />
 
@@ -60,15 +60,15 @@ function UserButton({ user }: { user?: ExtendUser }) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/dashboard/orders" className="group cursor-pointer gap-2 transition-colors focus:text-primary">
-              <TruckIcon className="size-3.5 transition-transform group-hover:translate-x-1" />
-              My orders
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
             <Link href="/dashboard/profile" className="group cursor-pointer gap-2 transition-colors focus:text-primary">
               <SettingsIcon className="size-3.5 transition-transform group-hover:rotate-180" />
               Profile
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/orders" className="group cursor-pointer gap-2 transition-colors focus:text-primary">
+              <TruckIcon className="size-3.5 transition-transform group-hover:translate-x-1" />
+              My orders
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild onSelect={(ev) => ev.preventDefault()}>

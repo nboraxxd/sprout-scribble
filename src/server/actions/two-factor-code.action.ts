@@ -7,12 +7,12 @@ import { headers } from 'next/headers'
 
 import { Response } from '@/types'
 import { TwoFactorCode } from '@/types/token.type'
-import { sendEmail } from '@/utils/mailgun'
-import { EMAIL_TEMPLATES } from '@/constants/email-templates'
 import { db } from '@/server'
 import { twoFactorCodes } from '@/server/schema'
 import { actionClient } from '@/lib/safe-action'
-import { twoFactorCodeSchema } from '@/lib/schema-validations/common.schema'
+import { resendTokenOrCodeSchema } from '@/lib/schema-validations/common.schema'
+import { sendEmail } from '@/utils/mailgun'
+import { EMAIL_TEMPLATES } from '@/constants/email-templates'
 
 export async function getTwoFactorCodeByEmailOrIpAddress({
   email,
@@ -109,7 +109,7 @@ export async function makeAndSendTwoFactorCode({ email, name }: { email: string;
     subject: 'Login verification code - Sprout & Scribble',
     html: EMAIL_TEMPLATES.TWO_FACTOR({ code: twoFactorCodeResponse.data.code, name: name || 'there' }),
   })
-  if (response.success === false) {
+  if (!response.success) {
     return {
       success: false,
       message: response.message,
@@ -128,7 +128,7 @@ export async function makeAndSendTwoFactorCode({ email, name }: { email: string;
 }
 
 export const resendTwoFactorCode = actionClient
-  .schema(twoFactorCodeSchema)
+  .schema(resendTokenOrCodeSchema)
   .action(async ({ parsedInput: { email, name } }) => {
     return makeAndSendTwoFactorCode({ email, name })
   })
