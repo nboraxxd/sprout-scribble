@@ -3,8 +3,9 @@
 import sanitizeHtml from 'sanitize-html'
 import StarterKit from '@tiptap/starter-kit'
 import { useFormContext } from 'react-hook-form'
-import { Placeholder } from '@tiptap/extension-placeholder'
+import { forwardRef, useImperativeHandle } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
+import { Placeholder } from '@tiptap/extension-placeholder'
 import { BoldIcon, ItalicIcon, ListIcon, ListOrderedIcon, StrikethroughIcon } from 'lucide-react'
 
 import { AddProductSchemaType } from '@/lib/schema-validations/product.schema'
@@ -12,7 +13,11 @@ import { Toggle } from '@/components/ui/toggle'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
 
-export default function Tiptap() {
+export interface TiptapHandle {
+  clearContent: () => void
+}
+
+const Tiptap = forwardRef<TiptapHandle>(function TiptapChild(_, ref) {
   const { setValue, getValues } = useFormContext<AddProductSchemaType>()
 
   const editor = useEditor({
@@ -48,6 +53,12 @@ export default function Tiptap() {
       },
     },
   })
+
+  useImperativeHandle(ref, () => ({
+    clearContent() {
+      editor && editor.commands.clearContent()
+    },
+  }))
 
   return (
     <div className="flex flex-col gap-2">
@@ -103,4 +114,6 @@ export default function Tiptap() {
       {editor ? <EditorContent editor={editor} /> : <Input className="min-h-20" disabled />}
     </div>
   )
-}
+})
+
+export default Tiptap

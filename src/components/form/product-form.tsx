@@ -1,18 +1,26 @@
 'use client'
 
 import slugify from 'slugify'
+import { toast } from 'sonner'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useAction } from 'next-safe-action/hooks'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { DollarSignIcon, RotateCcwIcon } from 'lucide-react'
+import { DollarSignIcon, LoaderCircleIcon, RotateCcwIcon } from 'lucide-react'
 
+import { addProduct } from '@/server/actions/product.action'
 import { AddProductSchemaType, addProductSchema } from '@/lib/schema-validations/product.schema'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import Tiptap from '@/components/form/tiptap'
+import { TiptapHandle } from '@/components/form/tiptap'
+import { FormMessages, Tiptap } from '@/components/form'
 
 export default function ProductForm() {
+  const tiptapRef = useRef<TiptapHandle>(null)
+  const [errorMessage, setErrorMessage] = useState('')
+
   const form = useForm<AddProductSchemaType>({
     resolver: zodResolver(addProductSchema),
     defaultValues: {
@@ -23,8 +31,19 @@ export default function ProductForm() {
     },
   })
 
-  function onSubmit(values: AddProductSchemaType) {
-    console.log(values)
+  const { executeAsync, status } = useAction(addProduct)
+
+  async function onSubmit(values: AddProductSchemaType) {
+    if (status === 'executing' || !tiptapRef.current) return
+
+    const response = await executeAsync(values)
+    if (response?.data?.success === true) {
+      form.reset()
+      tiptapRef.current.clearContent()
+      toast.success(response.data.message)
+    } else if (response?.data?.success === false) {
+      setErrorMessage(response.data.message)
+    }
   }
 
   return (
@@ -100,7 +119,7 @@ export default function ProductForm() {
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Tiptap />
+                <Tiptap ref={tiptapRef} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -125,8 +144,9 @@ export default function ProductForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="gap-1.5">
-          {/* <LoaderCircleIcon className="size-4 animate-spin" /> */}
+        <FormMessages errorMessage={errorMessage} />
+        <Button type="submit" className="gap-1.5" disabled={status === 'executing'}>
+          {status === 'executing' ? <LoaderCircleIcon className="size-4 animate-spin" /> : null}
           Add product
         </Button>
       </form>

@@ -135,15 +135,21 @@ export const twoFactorCodes = pgTable(
   })
 )
 
-export const products = pgTable('products', {
-  id: serial('id').primaryKey(),
-  name: text('name').notNull(),
-  slug: text('slug').notNull(),
-  description: text('description').notNull(),
-  price: real('price').notNull(),
-  createdAt: timestamp('createdAt').notNull().defaultNow(),
-  updatedAt: timestamp('updatedAt')
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-})
+export const products = pgTable(
+  'products',
+  {
+    id: serial('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull().unique(),
+    description: text('description').notNull(),
+    price: real('price').notNull(),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+    updatedAt: timestamp('updatedAt')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    slugIdx: uniqueIndex('slugIdx').on(table.slug),
+  })
+)

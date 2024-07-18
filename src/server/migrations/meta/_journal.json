@@ -197,6 +197,20 @@
       "when": 1721054856473,
       "tag": "0027_milky_the_hunter",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1721285142726,
+      "tag": "0028_handy_hairball",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1721286489928,
+      "tag": "0029_confused_golden_guardian",
+      "breakpoints": true
     }
   ]
 }
