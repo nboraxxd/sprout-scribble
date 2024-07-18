@@ -32,7 +32,7 @@ export const SessionContext: Context<TSessionContextValue | undefined> = createC
 >(undefined)
 
 export default function SessionDataProvider({ session: initialSession = null, children }: TSessionProviderProps) {
-  const retrieveSessionRef = useRef<unknown>(null)
+  const retrieveSessionRef = useRef<Promise<Response> | null>(null)
 
   const [session, setSession] = useState<Session | null>(initialSession)
   const [loading, setLoading] = useState<boolean>(!initialSession)
@@ -42,25 +42,22 @@ export default function SessionDataProvider({ session: initialSession = null, ch
     let timeout: NodeJS.Timeout | null = null
 
     const fetchSession = async () => {
-      if (!initialSession) {
+      if (!initialSession && !retrieveSessionRef.current) {
+        retrieveSessionRef.current = fetch('/api/auth/session')
         // Retrive data from session callback
-        const fetchedSessionResponse: Response = await fetch('/api/auth/session')
+        const fetchedSessionResponse: Response = await retrieveSessionRef.current
         const fetchedSession: Session | null = await fetchedSessionResponse.json()
 
         setSession(fetchedSession)
         setLoading(false)
+
+        timeout = setTimeout(() => {
+          retrieveSessionRef.current = null
+        }, 300)
       }
     }
 
-    if (!retrieveSessionRef.current) {
-      retrieveSessionRef.current = fetchSession
-
-      fetchSession().finally()
-
-      timeout = setTimeout(() => {
-        retrieveSessionRef.current = null
-      }, 500)
-    }
+    fetchSession().finally()
 
     return () => {
       if (timeout) clearTimeout(timeout)
