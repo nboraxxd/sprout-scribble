@@ -13,6 +13,7 @@ const envVariables = z.object({
   MAILGUN_DOMAIN: z.string(),
   UPLOADTHING_SECRET: z.string(),
   UPLOADTHING_APP_ID: z.string(),
+  AUTH_TRUST_HOST: z.string(),
 })
 
 const envProject = envVariables.safeParse(process.env)

@@ -1,6 +1,17 @@
 import { createId } from '@paralleldrive/cuid2'
 import type { AdapterAccountType } from 'next-auth/adapters'
-import { timestamp, pgTable, text, primaryKey, integer, boolean, pgEnum, uniqueIndex } from 'drizzle-orm/pg-core'
+import {
+  timestamp,
+  pgTable,
+  text,
+  primaryKey,
+  integer,
+  boolean,
+  pgEnum,
+  uniqueIndex,
+  serial,
+  real,
+} from 'drizzle-orm/pg-core'
 
 export const RoleEnum = pgEnum('RoleEnum', ['user', 'admin'])
 
@@ -123,3 +134,16 @@ export const twoFactorCodes = pgTable(
     }),
   })
 )
+
+export const products = pgTable('products', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull(),
+  description: text('description').notNull(),
+  price: real('price').notNull(),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+})
