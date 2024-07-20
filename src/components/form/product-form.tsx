@@ -18,7 +18,7 @@ import { TiptapHandle } from '@/components/form/tiptap'
 import { FormMessages, Tiptap } from '@/components/form'
 
 export default function ProductForm() {
-  const tiptapRef = useRef<TiptapHandle>(null)
+  const tiptapRef = useRef<TiptapHandle | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
 
   const form = useForm<AddProductSchemaType>({

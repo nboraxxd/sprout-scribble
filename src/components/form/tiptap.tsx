@@ -56,7 +56,7 @@ const Tiptap = forwardRef<TiptapHandle>(function TiptapChild(_, ref) {
 
   useImperativeHandle(ref, () => ({
     clearContent() {
-      editor && editor.commands.clearContent()
+      ref && editor && editor.commands.clearContent()
     },
   }))
 

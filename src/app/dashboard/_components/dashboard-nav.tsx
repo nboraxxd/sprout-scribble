@@ -48,8 +48,8 @@ export default function DashboardNav() {
   const { session } = useSessionData()
 
   return (
-    <nav className="mx-auto my-4 w-full max-w-2xl overflow-x-auto py-2">
-      <ul className="flex gap-3 text-xs font-semibold md:gap-6">
+    <nav className="my-4 flex overflow-x-auto py-2">
+      <ul className="mx-auto flex gap-3 text-xs font-semibold md:gap-6">
         {navLinks.map((link) => {
           const Icon = link.icon
 
