@@ -8,7 +8,7 @@ import { useAction } from 'next-safe-action/hooks'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { DollarSignIcon, LoaderCircleIcon, RotateCcwIcon } from 'lucide-react'
 
-import { addProduct } from '@/server/actions/product.action'
+import { createProduct } from '@/server/actions/product.action'
 import { AddProductSchemaType, addProductSchema } from '@/lib/schema-validations/product.schema'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -31,10 +31,11 @@ export default function ProductForm() {
     },
   })
 
-  const { executeAsync, status } = useAction(addProduct)
+  const { executeAsync, status } = useAction(createProduct)
 
   async function onSubmit(values: AddProductSchemaType) {
     if (status === 'executing' || !tiptapRef.current) return
+    setErrorMessage('')
 
     const response = await executeAsync(values)
     if (response?.data?.success === true) {

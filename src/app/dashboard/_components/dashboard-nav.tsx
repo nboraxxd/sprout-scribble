@@ -29,7 +29,7 @@ const navLinks = [
   },
   {
     label: 'Create',
-    href: '/dashboard/add-product',
+    href: '/dashboard/products/create',
     icon: PenSquareIcon,
     adminRequired: true,
   },

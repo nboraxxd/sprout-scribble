@@ -2,7 +2,7 @@ import { auth } from '@/server/auth'
 import { NextResponse } from 'next/server'
 
 const protectedPaths = ['/dashboard']
-const adminPaths = ['/dashboard/analytics', '/dashboard/add-product', '/dashboard/products']
+const adminPaths = ['/dashboard/analytics', '/dashboard/products']
 const authPaths = ['/login', '/register', '/forgot-password', '/reset-password']
 
 export default auth((req) => {
@@ -35,6 +35,11 @@ export default auth((req) => {
   // Redirect to profile if user to access dashboard
   if (isAuthenticated && nextUrl.pathname === '/dashboard') {
     return Response.redirect(new URL('/dashboard/profile', nextUrl))
+  }
+
+  // Redirect to products dashboard if admin to access /dashboard/edit
+  if (isAdmin && nextUrl.pathname === '/dashboard/products/edit') {
+    return Response.redirect(new URL('/dashboard/products', nextUrl))
   }
 
   return NextResponse.next({

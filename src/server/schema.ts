@@ -153,3 +153,5 @@ export const products = pgTable(
     slugIdx: uniqueIndex('slugIdx').on(table.slug),
   })
 )
+
+export type ProductType = typeof products.$inferSelect
