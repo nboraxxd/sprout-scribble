@@ -3,7 +3,7 @@
 import sanitizeHtml from 'sanitize-html'
 import StarterKit from '@tiptap/starter-kit'
 import { useFormContext } from 'react-hook-form'
-import { forwardRef, useImperativeHandle } from 'react'
+import { forwardRef, useEffect, useImperativeHandle } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import { Placeholder } from '@tiptap/extension-placeholder'
 import { BoldIcon, ItalicIcon, ListIcon, ListOrderedIcon, StrikethroughIcon } from 'lucide-react'
@@ -17,8 +17,8 @@ export interface TiptapHandle {
   clearContent: () => void
 }
 
-const Tiptap = forwardRef<TiptapHandle>(function TiptapChild(_, ref) {
-  const { setValue, getValues } = useFormContext<AddProductSchemaType>()
+const Tiptap = forwardRef<TiptapHandle, { value: string }>(function TiptapChild({ value }, ref) {
+  const { setValue } = useFormContext<AddProductSchemaType>()
 
   const editor = useEditor({
     extensions: [
@@ -45,7 +45,7 @@ const Tiptap = forwardRef<TiptapHandle>(function TiptapChild(_, ref) {
       setValue('description', sanitizeHtml(content))
     },
     immediatelyRender: false,
-    content: getValues('description'),
+    content: value,
     editorProps: {
       attributes: {
         class:
@@ -59,6 +59,11 @@ const Tiptap = forwardRef<TiptapHandle>(function TiptapChild(_, ref) {
       ref && editor && editor.commands.clearContent()
     },
   }))
+
+  useEffect(() => {
+    if (editor?.isEmpty) editor.commands.setContent(value)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value])
 
   return (
     <div className="flex flex-col gap-2">

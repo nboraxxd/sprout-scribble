@@ -10,4 +10,9 @@ export const addProductSchema = z.object({
   price: z.coerce.number().positive(),
 })
 
+export const updateProductSchema = addProductSchema.extend({
+  id: z.coerce.number(),
+})
+
 export type AddProductSchemaType = z.infer<typeof addProductSchema>
+export type UpdateProductSchemaType = z.infer<typeof updateProductSchema>

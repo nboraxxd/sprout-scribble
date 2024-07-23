@@ -1,8 +1,14 @@
 import { db } from '@/server'
+import { Metadata } from 'next'
 
 import { DataTable } from '@/app/dashboard/products/data-table'
-import placeholder from '@root/public/placeholder_small.jpg'
 import { columns } from '@/app/dashboard/products/columns'
+import placeholder from '@root/public/placeholder_small.jpg'
+
+export const metadata: Metadata = {
+  title: 'Manage products',
+  description: 'View and manage all the products in the store.',
+}
 
 export default async function ProductsPage() {
   const products = await db.query.products.findMany({

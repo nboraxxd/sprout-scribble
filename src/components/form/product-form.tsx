@@ -2,13 +2,15 @@
 
 import slugify from 'slugify'
 import { toast } from 'sonner'
-import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import { useAction } from 'next-safe-action/hooks'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { DollarSignIcon, LoaderCircleIcon, RotateCcwIcon } from 'lucide-react'
 
-import { createProduct } from '@/server/actions/product.action'
+import { ProductType } from '@/server/schema'
+import { createProduct, updateProduct } from '@/server/actions/product.action'
 import { AddProductSchemaType, addProductSchema } from '@/lib/schema-validations/product.schema'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -16,10 +18,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { TiptapHandle } from '@/components/form/tiptap'
 import { FormMessages, Tiptap } from '@/components/form'
+import Link from 'next/link'
 
-export default function ProductForm() {
+export default function ProductForm({ product }: { product?: ProductType }) {
   const tiptapRef = useRef<TiptapHandle | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
+  const router = useRouter()
 
   const form = useForm<AddProductSchemaType>({
     resolver: zodResolver(addProductSchema),
@@ -31,17 +35,28 @@ export default function ProductForm() {
     },
   })
 
-  const { executeAsync, status } = useAction(createProduct)
+  const { executeAsync: createProductExecuteAsync, status: createProductStatus } = useAction(createProduct)
+  const { executeAsync: updateProductExecuteAsync, status: updateProductStatus } = useAction(updateProduct)
+
+  useEffect(() => {
+    if (product) {
+      form.setValue('name', product.name)
+      form.setValue('slug', product.slug)
+      form.setValue('description', product.description)
+      form.setValue('price', product.price)
+    }
+  }, [form, product])
 
   async function onSubmit(values: AddProductSchemaType) {
-    if (status === 'executing' || !tiptapRef.current) return
+    if (createProductStatus === 'executing' || updateProductStatus === 'executing' || !tiptapRef.current) return
     setErrorMessage('')
 
-    const response = await executeAsync(values)
+    const response = product
+      ? await updateProductExecuteAsync({ ...values, id: product.id })
+      : await createProductExecuteAsync(values)
     if (response?.data?.success === true) {
-      form.reset()
-      tiptapRef.current.clearContent()
       toast.success(response.data.message)
+      router.push('/dashboard/products')
     } else if (response?.data?.success === false) {
       setErrorMessage(response.data.message)
     }
@@ -116,11 +131,11 @@ export default function ProductForm() {
         <FormField
           control={form.control}
           name="description"
-          render={() => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Tiptap ref={tiptapRef} />
+                <Tiptap ref={tiptapRef} value={field.value} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -146,10 +161,21 @@ export default function ProductForm() {
           )}
         />
         <FormMessages errorMessage={errorMessage} />
-        <Button type="submit" className="gap-1.5" disabled={status === 'executing'}>
-          {status === 'executing' ? <LoaderCircleIcon className="size-4 animate-spin" /> : null}
-          Add product
-        </Button>
+        <div className="flex justify-between gap-2">
+          <Button variant="ghost" asChild>
+            <Link href="/dashboard/products">Back to products</Link>
+          </Button>
+          <Button
+            type="submit"
+            className="gap-1.5"
+            disabled={createProductStatus === 'executing' || updateProductStatus === 'executing'}
+          >
+            {createProductStatus === 'executing' || updateProductStatus === 'executing' ? (
+              <LoaderCircleIcon className="size-4 animate-spin" />
+            ) : null}
+            {product ? 'Update' : 'Create'}
+          </Button>
+        </div>
       </form>
     </Form>
   )

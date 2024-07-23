@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { db } from '@/server'
 import { products } from '@/server/schema'
 import { actionClient } from '@/lib/safe-action'
-import { addProductSchema } from '@/lib/schema-validations/product.schema'
+import { addProductSchema, updateProductSchema } from '@/lib/schema-validations/product.schema'
 
 export const createProduct = actionClient
   .schema(addProductSchema)
@@ -34,6 +34,41 @@ export const createProduct = actionClient
         success: false,
         message: error.message ?? error.toString(),
       }
+    }
+  })
+
+export const updateProduct = actionClient
+  .schema(updateProductSchema)
+  .action(async ({ parsedInput: { id, name, slug, description, price } }) => {
+    const existingProduct = await db.query.products.findFirst({ where: eq(products.id, id) })
+    if (!existingProduct) {
+      return {
+        success: false,
+        message: 'Product not found',
+      }
+    }
+
+    if (slug !== existingProduct.slug) {
+      const existingSlug = await db.query.products.findFirst({ where: eq(products.slug, slug) })
+      if (existingSlug) {
+        return {
+          success: false,
+          message: 'Slug already exists',
+        }
+      }
+    }
+
+    const [product] = await db
+      .update(products)
+      .set({ name, slug, description, price })
+      .where(eq(products.id, id))
+      .returning()
+
+    revalidatePath('/dashboard/products')
+    return {
+      success: true,
+      message: 'Product updated successfully',
+      data: product,
     }
   })
 
