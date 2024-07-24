@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
-import { BarChartIcon, PackageIcon, SettingsIcon, TruckIcon } from 'lucide-react'
+import { BarChartIcon, PackageIcon, PenSquareIcon, SettingsIcon, TruckIcon } from 'lucide-react'
 
 import { cn } from '@/utils'
 import { useSessionData } from '@/hooks/useSessionData'
@@ -25,6 +25,12 @@ const navLinks = [
     label: 'Analytics',
     href: '/dashboard/analytics',
     icon: BarChartIcon,
+    adminRequired: true,
+  },
+  {
+    label: 'Create',
+    href: '/dashboard/products/create',
+    icon: PenSquareIcon,
     adminRequired: true,
   },
   {
@@ -52,7 +58,8 @@ export default function DashboardNav() {
               <MotionLink
                 className={cn(
                   'flex flex-col items-center gap-1 px-2 py-1',
-                  pathname.includes(link.href) && 'text-primary'
+                  (pathname === link.href || (pathname.includes('/edit/') && pathname.includes(link.href))) &&
+                    'text-primary'
                 )}
                 href={link.href}
                 whileTap={{ scale: 0.95 }}
@@ -61,7 +68,7 @@ export default function DashboardNav() {
                 {link.label}
               </MotionLink>
               <AnimatePresence>
-                {pathname.includes(link.href) ? (
+                {pathname === link.href || (pathname.includes('/edit/') && pathname.includes(link.href)) ? (
                   <motion.div
                     className="absolute -bottom-1 left-0 z-0 h-0.5 w-full rounded-full bg-primary"
                     initial={{ scale: 0.5 }}

@@ -211,6 +211,13 @@
       "when": 1721286489928,
       "tag": "0029_confused_golden_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1721791636643,
+      "tag": "0030_worried_scarlet_spider",
+      "breakpoints": true
     }
   ]
 }

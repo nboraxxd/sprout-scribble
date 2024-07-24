@@ -12,6 +12,7 @@ import {
   serial,
   real,
 } from 'drizzle-orm/pg-core'
+import { relations } from 'drizzle-orm'
 
 export const RoleEnum = pgEnum('RoleEnum', ['user', 'admin'])
 
@@ -136,7 +137,7 @@ export const twoFactorCodes = pgTable(
 )
 
 export const products = pgTable(
-  'products',
+  'product',
   {
     id: serial('id').primaryKey(),
     name: text('name').notNull(),
@@ -153,5 +154,78 @@ export const products = pgTable(
     slugIdx: uniqueIndex('slugIdx').on(table.slug),
   })
 )
+
+export const productVariants = pgTable('productVariant', {
+  id: serial('id').primaryKey(),
+  color: text('color').notNull(),
+  productType: text('productType').notNull(),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+  productId: serial('productId')
+    .notNull()
+    .references(() => products.id, { onDelete: 'cascade' }),
+})
+
+export const variantImages = pgTable('variantImage', {
+  id: serial('id').primaryKey(),
+  url: text('url').notNull(),
+  name: text('name').notNull(),
+  size: real('size').notNull(),
+  order: real('order').notNull(),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+  variantId: serial('variantId')
+    .notNull()
+    .references(() => productVariants.id, { onDelete: 'cascade' }),
+})
+
+export const variantTags = pgTable('variantTag', {
+  id: serial('id').primaryKey(),
+  tag: text('tag').notNull(),
+  createdAt: timestamp('createdAt').notNull().defaultNow(),
+  updatedAt: timestamp('updatedAt')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+  variantId: serial('variantId')
+    .notNull()
+    .references(() => productVariants.id, { onDelete: 'cascade' }),
+})
+
+export const productRelations = relations(products, ({ many }) => ({
+  productVariants: many(productVariants, { relationName: 'productVariants' }),
+}))
+
+export const productVariantsRelations = relations(productVariants, ({ many, one }) => ({
+  product: one(products, {
+    fields: [productVariants.productId],
+    references: [products.id],
+    relationName: 'productVariants',
+  }),
+  variantImages: many(variantImages, { relationName: 'variantImages' }),
+  variantTags: many(variantTags, { relationName: 'variantTags' }),
+}))
+
+export const variantImagesRelations = relations(variantImages, ({ one }) => ({
+  productVariants: one(productVariants, {
+    fields: [variantImages.variantId],
+    references: [productVariants.id],
+    relationName: 'variantImages',
+  }),
+}))
+
+export const variantTagsRelations = relations(variantTags, ({ one }) => ({
+  productVariants: one(productVariants, {
+    fields: [variantTags.variantId],
+    references: [productVariants.id],
+    relationName: 'variantTags',
+  }),
+}))
 
 export type ProductType = typeof products.$inferSelect
