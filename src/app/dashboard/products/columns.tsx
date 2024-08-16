@@ -6,11 +6,13 @@ import { toast } from 'sonner'
 import { useState } from 'react'
 import { useAction } from 'next-safe-action/hooks'
 import { ColumnDef, Row } from '@tanstack/react-table'
-import { MoreHorizontalIcon, LoaderCircleIcon } from 'lucide-react'
+import { MoreHorizontalIcon, LoaderCircleIcon, PlusCircleIcon } from 'lucide-react'
 
 import { cn, formatCurrency } from '@/utils'
+import { VariantsWithImagesTags } from '@/types/infer.type'
 import { deleteProduct } from '@/server/actions/product.action'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
@@ -22,12 +24,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { ProductVariant } from '@/app/dashboard/_components'
 
 export type ProductColumn = {
   id: number
   name: string
   price: number
-  variants: any
+  variants: VariantsWithImagesTags[]
   image: string
 }
 
@@ -43,6 +46,36 @@ export const columns: ColumnDef<ProductColumn>[] = [
   {
     accessorKey: 'variants',
     header: 'Variants',
+    cell: ({ row }) => {
+      const variants = row.getValue<VariantsWithImagesTags[]>('variants')
+
+      return (
+        <div className="flex gap-2">
+          {variants.map((variant) => (
+            <TooltipProvider key={variant.id}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <ProductVariant productId={variant.productId} variant={variant} isEdit>
+                    <div className="size-5 rounded-full" key={variant.id} style={{ background: variant.color }} />
+                  </ProductVariant>
+                </TooltipTrigger>
+                <TooltipContent>{variant.productType}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ))}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger className={cn(buttonVariants({ size: 'icon', variant: 'ghost' }))}>
+                <ProductVariant productId={row.original.id}>
+                  <PlusCircleIcon className="size-5" />
+                </ProductVariant>
+              </TooltipTrigger>
+              <TooltipContent>Create a new variant</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )
+    },
   },
   {
     accessorKey: 'price',

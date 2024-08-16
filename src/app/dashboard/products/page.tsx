@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 
 export default async function ProductsPage() {
   const products = await db.query.products.findMany({
+    with: { productVariants: { with: { variantImages: true, variantTags: true } } },
     orderBy: (products, { asc }) => [asc(products.id)],
   })
 
@@ -19,7 +20,7 @@ export default async function ProductsPage() {
     id: product.id,
     name: product.name,
     price: product.price,
-    variants: [],
+    variants: product.productVariants,
     image: placeholder.src,
   }))
 

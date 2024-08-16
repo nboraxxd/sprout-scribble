@@ -1,4 +1,5 @@
 import { createId } from '@paralleldrive/cuid2'
+import { InferSelectModel, relations } from 'drizzle-orm'
 import type { AdapterAccountType } from 'next-auth/adapters'
 import {
   timestamp,
@@ -12,7 +13,6 @@ import {
   serial,
   real,
 } from 'drizzle-orm/pg-core'
-import { relations } from 'drizzle-orm'
 
 export const RoleEnum = pgEnum('RoleEnum', ['user', 'admin'])
 
@@ -228,4 +228,5 @@ export const variantTagsRelations = relations(variantTags, ({ one }) => ({
   }),
 }))
 
-export type ProductType = typeof products.$inferSelect
+// export type ProductType = typeof products.$inferSelect
+export type ProductType = InferSelectModel<typeof products>
