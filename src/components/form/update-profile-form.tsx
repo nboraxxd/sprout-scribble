@@ -30,7 +30,7 @@ export default function UpdateProfileForm() {
   const [file, setFile] = useState<File | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
-  const { isUploading, startUpload } = useUploadThing('imageUploader', {
+  const { isUploading, startUpload } = useUploadThing('avatarUploader', {
     onUploadError: (error) => {
       throw error
     },

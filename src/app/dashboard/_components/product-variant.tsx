@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import InputTags from '@/app/dashboard/_components/input-tags'
+import { InputTags, VariantImages } from '@/app/dashboard/_components'
 
 interface VariantProps {
   children: React.ReactNode
@@ -51,7 +51,7 @@ const ProductVariant = forwardRef<HTMLDivElement, VariantProps>(function Product
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-h-[860px] overflow-y-auto lg:max-w-2xl">
+      <DialogContent className="max-h-[860px] overflow-y-auto lg:max-w-screen-lg">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit' : 'Create'} your variant</DialogTitle>
           <DialogDescription>Manage your product variants here. You can add tags, images, and more.</DialogDescription>
@@ -97,7 +97,7 @@ const ProductVariant = forwardRef<HTMLDivElement, VariantProps>(function Product
                 </FormItem>
               )}
             />
-            {/* <VariantImages /> */}
+            <VariantImages />
             <div className="flex items-center justify-end gap-4">
               {isEdit && variant ? (
                 <Button variant={'destructive'} type="button" onClick={() => {}}>

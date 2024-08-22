@@ -32,7 +32,8 @@ export const productVariantSchema = z.object({
         name: z.string(),
       })
     )
-    .min(1, { message: 'You must provide at least one image' }),
+    .min(1, { message: 'You must provide at least one image' })
+    .max(10, { message: 'You can only provide up to 10 images' }),
 })
 
 export type AddProductSchemaType = z.infer<typeof addProductSchema>

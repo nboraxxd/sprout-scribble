@@ -1,11 +1,14 @@
+'use client'
+
+import { XIcon } from 'lucide-react'
+import { useFormContext } from 'react-hook-form'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Dispatch, SetStateAction, forwardRef, useState } from 'react'
+
+import { cn } from '@/utils'
+import { ProductVariantSchemaType } from '@/lib/schema-validations/product.schema'
 import { Badge } from '@/components/ui/badge'
 import { Input, InputProps } from '@/components/ui/input'
-import { ProductVariantSchemaType } from '@/lib/schema-validations/product.schema'
-import { cn } from '@/utils'
-import { AnimatePresence, motion } from 'framer-motion'
-import { XIcon } from 'lucide-react'
-import { Dispatch, SetStateAction, forwardRef, useState } from 'react'
-import { useFormContext } from 'react-hook-form'
 
 type Props = InputProps & {
   value: string[]
