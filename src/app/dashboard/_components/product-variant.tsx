@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 
 import { useAction } from 'next-safe-action/hooks'
 import { VariantsWithImagesTags } from '@/types/infer.type'
-import { createProductVariant } from '@/server/actions/product.action'
+import { createProductVariant, updateProductVariant } from '@/server/actions/product.action'
 import { ProductVariantSchemaType, productVariantSchema } from '@/lib/schema-validations/product.schema'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -25,8 +25,8 @@ import { LoaderCircleIcon } from 'lucide-react'
 
 interface VariantProps {
   children: React.ReactNode
+  productId: number
   isEdit?: boolean
-  productId?: number
   variant?: VariantsWithImagesTags
 }
 
@@ -49,11 +49,18 @@ const ProductVariant = forwardRef<HTMLDivElement, VariantProps>(function Product
   })
 
   const { executeAsync: createVariantExecuteAsync, status: createVariantStatus } = useAction(createProductVariant)
+  const { executeAsync: updateVariantExecuteAsync, status: updateVariantStatus } = useAction(updateProductVariant)
 
   async function onSubmit(values: ProductVariantSchemaType) {
-    if (createVariantStatus === 'executing') return
+    if (createVariantStatus === 'executing' || updateVariantStatus === 'executing') return
 
-    const response = await createVariantExecuteAsync(values)
+    const response =
+      isEdit && variant?.id
+        ? await updateVariantExecuteAsync({
+            ...values,
+            id: variant.id,
+          })
+        : await createVariantExecuteAsync(values)
 
     if (response?.data?.success === true) {
       toast.success(response.data.message)
@@ -119,8 +126,14 @@ const ProductVariant = forwardRef<HTMLDivElement, VariantProps>(function Product
                   Delete Variant
                 </Button>
               ) : null}
-              <Button type="submit" className="gap-1.5" disabled={createVariantStatus === 'executing'}>
-                {createVariantStatus === 'executing' ? <LoaderCircleIcon className="size-4 animate-spin" /> : null}
+              <Button
+                type="submit"
+                className="gap-1.5"
+                disabled={createVariantStatus === 'executing' || updateVariantStatus === 'executing'}
+              >
+                {createVariantStatus === 'executing' || updateVariantStatus === 'executing' ? (
+                  <LoaderCircleIcon className="size-4 animate-spin" />
+                ) : null}
                 {isEdit ? 'Update Variant' : 'Create Variant'}
               </Button>
             </div>

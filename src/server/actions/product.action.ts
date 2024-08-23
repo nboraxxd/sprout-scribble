@@ -132,3 +132,51 @@ export const createProductVariant = actionClient
       }
     }
   })
+
+export const updateProductVariant = actionClient
+  .schema(productVariantSchema.omit({ id: true }).merge(z.object({ id: z.number() })))
+  .action(async ({ parsedInput: { color, productId, productType, tags, variantImages: images, id } }) => {
+    try {
+      const existingVariant = await db.query.productVariants.findFirst({ where: eq(productVariants.id, id) })
+
+      if (!existingVariant) {
+        return {
+          success: false,
+          message: 'Variant not found',
+        }
+      }
+
+      const [variant] = await db
+        .update(productVariants)
+        .set({ productId, productType, color })
+        .where(eq(productVariants.id, id))
+        .returning()
+
+      await Promise.all([
+        db.delete(variantTags).where(eq(variantTags.variantId, id)), // Delete tags
+        db.insert(variantTags).values(tags.map((tag) => ({ tag, variantId: variant.id }))), // Insert tags
+        db.delete(variantImages).where(eq(variantImages.id, variant.id)), // Delete images
+        db.insert(variantImages).values(
+          images.map((image, index) => ({
+            name: image.name,
+            url: image.url,
+            size: image.size,
+            order: index,
+            variantId: variant.id,
+          }))
+        ), // Insert images
+      ])
+
+      revalidatePath('/dashboard/products')
+      return {
+        success: true,
+        message: 'Variant updated successfully',
+        data: variant,
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message ?? error.toString(),
+      }
+    }
+  })
