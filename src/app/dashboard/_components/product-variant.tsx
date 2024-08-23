@@ -4,7 +4,9 @@ import { forwardRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
+import { useAction } from 'next-safe-action/hooks'
 import { VariantsWithImagesTags } from '@/types/infer.type'
+import { createProductVariant } from '@/server/actions/product.action'
 import { ProductVariantSchemaType, productVariantSchema } from '@/lib/schema-validations/product.schema'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -18,6 +20,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { InputTags, VariantImages } from '@/app/dashboard/_components'
+import { toast } from 'sonner'
+import { LoaderCircleIcon } from 'lucide-react'
 
 interface VariantProps {
   children: React.ReactNode
@@ -35,17 +39,28 @@ const ProductVariant = forwardRef<HTMLDivElement, VariantProps>(function Product
   const form = useForm<ProductVariantSchemaType>({
     resolver: zodResolver(productVariantSchema),
     defaultValues: {
-      tags: [],
-      variantImages: [],
-      color: '#000000',
-      id: undefined,
+      tags: variant?.variantTags.map((item) => item.tag) ?? [],
+      variantImages: variant?.variantImages ?? [],
+      color: variant?.color ?? '#000000',
+      id: variant?.id,
       productId,
-      productType: '',
+      productType: variant?.productType ?? '',
     },
   })
 
-  function onSubmit(values: ProductVariantSchemaType) {
-    console.log(values)
+  const { executeAsync: createVariantExecuteAsync, status: createVariantStatus } = useAction(createProductVariant)
+
+  async function onSubmit(values: ProductVariantSchemaType) {
+    if (createVariantStatus === 'executing') return
+
+    const response = await createVariantExecuteAsync(values)
+
+    if (response?.data?.success === true) {
+      toast.success(response.data.message)
+      setOpen(false)
+    } else if (response?.data?.success === false) {
+      toast.error(response.data.message)
+    }
   }
 
   return (
@@ -104,7 +119,10 @@ const ProductVariant = forwardRef<HTMLDivElement, VariantProps>(function Product
                   Delete Variant
                 </Button>
               ) : null}
-              <Button type="submit">{isEdit ? 'Update Variant' : 'Create Variant'}</Button>
+              <Button type="submit" className="gap-1.5" disabled={createVariantStatus === 'executing'}>
+                {createVariantStatus === 'executing' ? <LoaderCircleIcon className="size-4 animate-spin" /> : null}
+                {isEdit ? 'Update Variant' : 'Create Variant'}
+              </Button>
             </div>
           </form>
         </Form>

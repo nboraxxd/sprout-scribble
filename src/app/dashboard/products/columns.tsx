@@ -50,7 +50,7 @@ export const columns: ColumnDef<ProductColumn>[] = [
       const variants = row.getValue<VariantsWithImagesTags[]>('variants')
 
       return (
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           {variants.map((variant) => (
             <TooltipProvider key={variant.id}>
               <Tooltip>

@@ -5,9 +5,9 @@ import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
 import { db } from '@/server'
-import { products } from '@/server/schema'
+import { productVariants, products, variantImages, variantTags } from '@/server/schema'
 import { actionClient } from '@/lib/safe-action'
-import { addProductSchema, updateProductSchema } from '@/lib/schema-validations/product.schema'
+import { addProductSchema, productVariantSchema, updateProductSchema } from '@/lib/schema-validations/product.schema'
 
 export const createProduct = actionClient
   .schema(addProductSchema)
@@ -89,5 +89,46 @@ export const deleteProduct = actionClient
       success: true,
       message: 'Product deleted successfully',
       data: response,
+    }
+  })
+
+export const createProductVariant = actionClient
+  .schema(productVariantSchema.omit({ id: true }))
+  .action(async ({ parsedInput: { color, productId, productType, tags, variantImages: images } }) => {
+    try {
+      const existingProduct = await db.query.products.findFirst({ where: eq(products.id, productId) })
+      if (!existingProduct) {
+        return {
+          success: false,
+          message: 'Product not found',
+        }
+      }
+
+      const [variant] = await db.insert(productVariants).values({ productId, productType, color }).returning()
+
+      await Promise.all([
+        db.insert(variantTags).values(tags.map((tag) => ({ tag, variantId: variant.id }))), // Insert tags
+        db.insert(variantImages).values(
+          images.map((image, index) => ({
+            name: image.name,
+            url: image.url,
+            size: image.size,
+            order: index,
+            variantId: variant.id,
+          }))
+        ), // Insert images
+      ])
+
+      revalidatePath('/dashboard/products')
+      return {
+        success: true,
+        message: 'Variant added successfully',
+        data: variant,
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.message ?? error.toString(),
+      }
     }
   })

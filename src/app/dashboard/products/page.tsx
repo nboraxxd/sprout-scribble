@@ -16,13 +16,25 @@ export default async function ProductsPage() {
     orderBy: (products, { asc }) => [asc(products.id)],
   })
 
-  const dataTable = products.map((product) => ({
-    id: product.id,
-    name: product.name,
-    price: product.price,
-    variants: product.productVariants,
-    image: placeholder.src,
-  }))
+  const dataTable = products.map((product) => {
+    if (product.productVariants.length === 0) {
+      return {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        variants: product.productVariants,
+        image: placeholder.src,
+      }
+    }
+    const image = product.productVariants[0].variantImages[0].url
+    return {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      variants: product.productVariants,
+      image,
+    }
+  })
 
   return <DataTable data={dataTable} columns={columns} />
 }
