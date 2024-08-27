@@ -7,7 +7,12 @@ import { revalidatePath } from 'next/cache'
 import { db } from '@/server'
 import { productVariants, products, variantImages, variantTags } from '@/server/schema'
 import { actionClient } from '@/lib/safe-action'
-import { addProductSchema, productVariantSchema, updateProductSchema } from '@/lib/schema-validations/product.schema'
+import {
+  ProductVariantSchemaType,
+  addProductSchema,
+  productVariantSchema,
+  updateProductSchema,
+} from '@/lib/schema-validations/product.schema'
 
 export const createProduct = actionClient
   .schema(addProductSchema)
@@ -107,9 +112,9 @@ export const createProductVariant = actionClient
       const [variant] = await db.insert(productVariants).values({ productId, productType, color }).returning()
 
       await Promise.all([
-        db.insert(variantTags).values(tags.map((tag) => ({ tag, variantId: variant.id }))), // Insert tags
+        db.insert(variantTags).values(tags.map((tag: string) => ({ tag, variantId: variant.id }))), // Insert tags
         db.insert(variantImages).values(
-          images.map((image, index) => ({
+          images.map((image: ProductVariantSchemaType['variantImages'][number], index: number) => ({
             name: image.name,
             url: image.url,
             size: image.size,
@@ -154,10 +159,10 @@ export const updateProductVariant = actionClient
 
       await Promise.all([
         db.delete(variantTags).where(eq(variantTags.variantId, id)), // Delete tags
-        db.insert(variantTags).values(tags.map((tag) => ({ tag, variantId: variant.id }))), // Insert tags
+        db.insert(variantTags).values(tags.map((tag: string) => ({ tag, variantId: variant.id }))), // Insert tags
         db.delete(variantImages).where(eq(variantImages.id, variant.id)), // Delete images
         db.insert(variantImages).values(
-          images.map((image, index) => ({
+          images.map((image: ProductVariantSchemaType['variantImages'][number], index: number) => ({
             name: image.name,
             url: image.url,
             size: image.size,
@@ -178,5 +183,25 @@ export const updateProductVariant = actionClient
         success: false,
         message: error.message ?? error.toString(),
       }
+    }
+  })
+
+export const deleteProductVariant = actionClient
+  .schema(z.object({ id: z.coerce.number() }))
+  .action(async ({ parsedInput: { id } }) => {
+    const response = await db.delete(productVariants).where(eq(productVariants.id, id)).returning()
+
+    if (response.length === 0) {
+      return {
+        success: false,
+        message: 'Variant not found',
+      }
+    }
+
+    revalidatePath('/dashboard/products')
+    return {
+      success: true,
+      message: 'Variant deleted successfully',
+      data: response,
     }
   })

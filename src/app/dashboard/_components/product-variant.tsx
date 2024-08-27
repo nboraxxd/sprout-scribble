@@ -6,8 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 
 import { useAction } from 'next-safe-action/hooks'
 import { VariantsWithImagesTags } from '@/types/infer.type'
-import { createProductVariant, updateProductVariant } from '@/server/actions/product.action'
 import { ProductVariantSchemaType, productVariantSchema } from '@/lib/schema-validations/product.schema'
+import { createProductVariant, deleteProductVariant, updateProductVariant } from '@/server/actions/product.action'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -50,23 +50,56 @@ const ProductVariant = forwardRef<HTMLDivElement, VariantProps>(function Product
 
   const { executeAsync: createVariantExecuteAsync, status: createVariantStatus } = useAction(createProductVariant)
   const { executeAsync: updateVariantExecuteAsync, status: updateVariantStatus } = useAction(updateProductVariant)
+  const { executeAsync: deleteVariantExecuteAsync, status: deleteVariantStatus } = useAction(deleteProductVariant)
 
   async function onSubmit(values: ProductVariantSchemaType) {
-    if (createVariantStatus === 'executing' || updateVariantStatus === 'executing') return
+    if (
+      createVariantStatus === 'executing' ||
+      updateVariantStatus === 'executing' ||
+      deleteVariantStatus === 'executing'
+    )
+      return
 
-    const response =
-      isEdit && variant?.id
-        ? await updateVariantExecuteAsync({
-            ...values,
-            id: variant.id,
-          })
-        : await createVariantExecuteAsync(values)
+    try {
+      const response =
+        isEdit && variant?.id
+          ? await updateVariantExecuteAsync({
+              ...values,
+              id: variant.id,
+            })
+          : await createVariantExecuteAsync(values)
 
-    if (response?.data?.success === true) {
-      toast.success(response.data.message)
-      setOpen(false)
-    } else if (response?.data?.success === false) {
-      toast.error(response.data.message)
+      if (response?.data?.success === true) {
+        toast.success(response.data.message)
+        setOpen(false)
+      } else if (response?.data?.success === false) {
+        toast.error(response.data.message)
+      }
+    } catch (error: any) {
+      toast.error(error.message ?? error.toString())
+    }
+  }
+
+  async function onDeleteVariant() {
+    if (
+      !variant?.id ||
+      createVariantStatus === 'executing' ||
+      updateVariantStatus === 'executing' ||
+      deleteVariantStatus === 'executing'
+    )
+      return
+
+    try {
+      const response = await deleteVariantExecuteAsync({ id: variant.id })
+
+      if (response?.data?.success === true) {
+        toast.success(response.data.message)
+        setOpen(false)
+      } else if (response?.data?.success === false) {
+        toast.error(response.data.message)
+      }
+    } catch (error: any) {
+      toast.error(error.message ?? error.toString())
     }
   }
 
@@ -122,14 +155,29 @@ const ProductVariant = forwardRef<HTMLDivElement, VariantProps>(function Product
             <VariantImages />
             <div className="flex items-center justify-end gap-4">
               {isEdit && variant ? (
-                <Button variant={'destructive'} type="button" onClick={() => {}}>
+                <Button
+                  variant="destructive"
+                  type="button"
+                  className="gap-1.5"
+                  disabled={
+                    createVariantStatus === 'executing' ||
+                    updateVariantStatus === 'executing' ||
+                    deleteVariantStatus === 'executing'
+                  }
+                  onClick={onDeleteVariant}
+                >
+                  {deleteVariantStatus === 'executing' ? <LoaderCircleIcon className="size-4 animate-spin" /> : null}
                   Delete Variant
                 </Button>
               ) : null}
               <Button
                 type="submit"
                 className="gap-1.5"
-                disabled={createVariantStatus === 'executing' || updateVariantStatus === 'executing'}
+                disabled={
+                  createVariantStatus === 'executing' ||
+                  updateVariantStatus === 'executing' ||
+                  deleteVariantStatus === 'executing'
+                }
               >
                 {createVariantStatus === 'executing' || updateVariantStatus === 'executing' ? (
                   <LoaderCircleIcon className="size-4 animate-spin" />
