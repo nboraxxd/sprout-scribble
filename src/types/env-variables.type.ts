@@ -14,6 +14,8 @@ const envVariables = z.object({
   UPLOADTHING_SECRET: z.string(),
   UPLOADTHING_APP_ID: z.string(),
   AUTH_TRUST_HOST: z.string(),
+  NEXT_PUBLIC_ALGOLIA_APP_ID: z.string(),
+  ALGOLIA_API_KEY: z.string(),
 })
 
 const envProject = envVariables.safeParse(process.env)

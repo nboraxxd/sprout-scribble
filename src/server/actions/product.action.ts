@@ -3,6 +3,7 @@
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { algoliasearch } from 'algoliasearch'
 
 import { db } from '@/server'
 import { productVariants, products, variantImages, variantTags } from '@/server/schema'
@@ -13,6 +14,9 @@ import {
   productVariantSchema,
   updateProductSchema,
 } from '@/lib/schema-validations/product.schema'
+
+const indexName = 'products'
+const client = algoliasearch(process.env.NEXT_PUBLIC_ALGOLIA_APP_ID, process.env.ALGOLIA_API_KEY)
 
 export const createProduct = actionClient
   .schema(addProductSchema)
@@ -112,7 +116,7 @@ export const createProductVariant = actionClient
       const [variant] = await db.insert(productVariants).values({ productId, productType, color }).returning()
 
       await Promise.all([
-        db.insert(variantTags).values(tags.map((tag: string) => ({ tag, variantId: variant.id }))), // Insert tags
+        db.insert(variantTags).values(tags.map((tag: string) => ({ tag, variantId: variant.id }))),
         db.insert(variantImages).values(
           images.map((image: ProductVariantSchemaType['variantImages'][number], index: number) => ({
             name: image.name,
@@ -121,7 +125,18 @@ export const createProductVariant = actionClient
             order: index,
             variantId: variant.id,
           }))
-        ), // Insert images
+        ),
+        client.saveObject({
+          indexName,
+          body: {
+            objectID: variant.id.toString(),
+            id: existingProduct.id,
+            name: existingProduct.name,
+            price: existingProduct.price,
+            productType,
+            variantImages: images[0].url,
+          },
+        }),
       ])
 
       revalidatePath('/dashboard/products')
@@ -158,9 +173,9 @@ export const updateProductVariant = actionClient
         .returning()
 
       await Promise.all([
-        db.delete(variantTags).where(eq(variantTags.variantId, id)), // Delete tags
-        db.insert(variantTags).values(tags.map((tag: string) => ({ tag, variantId: variant.id }))), // Insert tags
-        db.delete(variantImages).where(eq(variantImages.id, variant.id)), // Delete images
+        db.delete(variantTags).where(eq(variantTags.variantId, id)),
+        db.insert(variantTags).values(tags.map((tag: string) => ({ tag, variantId: variant.id }))),
+        db.delete(variantImages).where(eq(variantImages.id, variant.id)),
         db.insert(variantImages).values(
           images.map((image: ProductVariantSchemaType['variantImages'][number], index: number) => ({
             name: image.name,
@@ -169,7 +184,14 @@ export const updateProductVariant = actionClient
             order: index,
             variantId: variant.id,
           }))
-        ), // Insert images
+        ),
+        client.partialUpdateObject({
+          indexName,
+          objectID: variant.id.toString(),
+          id: productId,
+          productType,
+          variantImages: images[0].url,
+        }),
       ])
 
       revalidatePath('/dashboard/products')
@@ -189,7 +211,13 @@ export const updateProductVariant = actionClient
 export const deleteProductVariant = actionClient
   .schema(z.object({ id: z.coerce.number() }))
   .action(async ({ parsedInput: { id } }) => {
-    const response = await db.delete(productVariants).where(eq(productVariants.id, id)).returning()
+    const [response] = await Promise.all([
+      db.delete(productVariants).where(eq(productVariants.id, id)).returning(),
+      client.deleteObject({
+        indexName,
+        objectID: id.toString(),
+      }),
+    ])
 
     if (response.length === 0) {
       return {

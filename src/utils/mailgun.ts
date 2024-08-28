@@ -6,7 +6,7 @@ import { SendEmailParams } from '@/types/token.type'
 export async function sendEmail({ name, email, subject, html }: SendEmailParams) {
   try {
     const mailgun = new Mailgun(formData)
-    const client = mailgun.client({ username: 'api', key: process.env.MAILGUN_API_KEY! })
+    const client = mailgun.client({ username: 'api', key: process.env.MAILGUN_API_KEY })
 
     const data: MailgunMessageData = {
       from: `Sprout & Scribble <no-reply@${process.env.MAILGUN_DOMAIN}>`,
